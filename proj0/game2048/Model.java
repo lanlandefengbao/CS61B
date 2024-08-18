@@ -114,7 +114,6 @@ public class Model extends Observable {
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
 
-        board.setViewingPerspective(side);
         boolean isMerged = false; //merged or not
         boolean isMoved = false; //moved or not
         int r_celling = board.size()-1;
@@ -135,7 +134,6 @@ public class Model extends Observable {
                 }
             }
         }
-        board.setViewingPerspective(Side.NORTH);
         if (isMoved) {
             changed = true;
         }
