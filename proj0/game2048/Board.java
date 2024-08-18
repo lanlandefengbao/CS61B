@@ -91,7 +91,9 @@ public class Board implements Iterable<Tile> {
         if (tile.col() == pcol && tile.row() == prow) {
             return false;
         }
+        //otherwise, get the tile at the target pos
         Tile tile1 = vtile(col, row, viewPerspective);
+        //we sure will move the current tile, so release it
         values[tile.col()][tile.row()] = null;
 
         if (tile1 == null) {
