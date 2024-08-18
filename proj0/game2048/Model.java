@@ -135,7 +135,7 @@ public class Model extends Observable {
                 }
             }
         }
-//        board.setViewingPerspective(Side.NORTH);
+        board.setViewingPerspective(Side.NORTH);
         if (isMoved) {
             changed = true;
         }
@@ -216,8 +216,7 @@ public class Model extends Observable {
      * Returns true if there are any valid moves on the board.
      * There are two ways that there can be valid moves:
      * 1. There is at least one empty space on the board.
-     * 2. There are two adjacent tiles with the same value.
-     */
+     * 2. There are two adjacent tiles with the same va */
 
     public static boolean atLeastOneMoveExists(Board b) {
         int size = b.size();
