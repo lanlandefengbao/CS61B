@@ -1,6 +1,8 @@
 package game2048;
 
+import java.util.Arrays;
 import java.util.Formatter;
+import java.util.Objects;
 import java.util.Observable;
 
 
@@ -113,30 +115,32 @@ public class Model extends Observable {
         // TODO: Modify this.board (and perhaps this.score) to account
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
-
-        boolean isMerged = false; //merged or not
-        boolean isMoved = false; //moved or not
-        int r_celling = board.size()-1;
+        boolean isMerged;
+        boolean isMoved;
+        board.setViewingPerspective(side);
         for (int c = 0; c < board.size(); c++) {
+            int r_celling = board.size()-1;
             for (int r = board.size()-2; r >= 0; r--) {
                 Tile t_current = board.tile(c, r);
                 if (t_current == null) {
                     continue;
                 } else {
                     int[] pos_target = findTargetPos(t_current, r_celling);
+                    int[] pos_current = new int[] {t_current.col(), t_current.row()};
+                    isMoved = (Arrays.equals(pos_target, pos_current));
                     isMerged = board.move(pos_target[0], pos_target[1], t_current);
-                    isMoved = true;
                 }
                 //if merge happened, we update the r_celling and change the score
                 if (isMerged) {
                     score += board.tile(c, r_celling).value();
                     r_celling -= 1;
                 }
+                if (isMoved) {
+                    changed = true;
+                }
             }
         }
-        if (isMoved) {
-            changed = true;
-        }
+        board.setViewingPerspective(Side.NORTH);
 
         checkGameOver();
         if (changed) {
@@ -145,10 +149,9 @@ public class Model extends Observable {
         return changed;
     }
 
-    private int[] findTargetPos(Tile tile, int r_celling) {
+    public int[] findTargetPos(Tile tile, int r_celling) {
         int c = tile.col();
         int[] pos_target = new int[]{c,tile.row()};
-        boolean move = false;
         for (int r = tile.row()+1; r <= r_celling; r++) {
             if (board.tile(c,r) == null) {
                 if (r == r_celling) {
@@ -243,7 +246,7 @@ public class Model extends Observable {
     }
 
     @Override
-     /** Returns the model as a string, used for debugging. */
+    /** Returns the model as a string, used for debugging. */
     public String toString() {
         Formatter out = new Formatter();
         out.format("%n[%n");
