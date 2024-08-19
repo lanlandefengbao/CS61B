@@ -108,73 +108,41 @@ public class Model extends Observable {
      *    value, then the leading two tiles in the direction of motion merge,
      *    and the trailing tile does not.
      * */
-//    public boolean tilt(Side side) {
-//        boolean changed;
-//        changed = false;
-//
-//        // TODO: Modify this.board (and perhaps this.score) to account
-//        // for the tilt to the Side SIDE. If the board changed, set the
-//        // changed local variable to true.
-//        boolean isMerged;
-//        boolean isMoved;
-//        board.setViewingPerspective(side);
-//        for (int c = 0; c < board.size(); c++) {
-//            int r_celling = board.size()-1;
-//            for (int r = board.size()-2; r >= 0; r--) {
-//                Tile t_current = board.tile(c, r);
-//                if (t_current == null) {
-//                    continue;
-//                } else {
-//                    int[] pos_target = findTargetPos(t_current, r_celling);
-//                    int[] pos_current = new int[] {t_current.col(), t_current.row()};
-//                    isMoved = (Arrays.equals(pos_target, pos_current));
-//                    isMerged = board.move(pos_target[0], pos_target[1], t_current);
-//                }
-//                //if merge happened, we update the r_celling and change the score
-//                if (isMerged) {
-//                    score += board.tile(c, r_celling).value();
-//                    r_celling -= 1;
-//                }
-//                if (isMoved) {
-//                    changed = true;
-//                }
-//            }
-//        }
-//        board.setViewingPerspective(Side.NORTH);
-//
-//        checkGameOver();
-//        if (changed) {
-//            setChanged();
-//        }
-//        return changed;
-//    } //ONLY DEAL WITH 'UP' CORRECTLY
 
     public boolean tilt(Side side) {
         boolean changed = false;
         board.setViewingPerspective(side);
 
         for (int col = 0; col < board.size(); col++) {
-            int lastMergeRow = board.size(); // 用来记录上一次合并的位置
+            int r_celling = board.size()-1;
             for (int row = board.size() - 2; row >= 0; row--) {
                 Tile t = board.tile(col, row);
+
                 if (t == null) {
                     continue;
                 }
-
-                int targetRow = row;
-                while (targetRow + 1 < lastMergeRow && board.tile(col, targetRow + 1) == null) {
-                    targetRow++;
-                }
-
-                if (targetRow + 1 < lastMergeRow && board.tile(col, targetRow + 1).value() == t.value()) {
-                    targetRow++;
-                    score += t.value() * 2; // 更新分数
-                    lastMergeRow = targetRow; // 更新上次合并的位置
-                }
-
-                if (targetRow != row) {
-                    board.move(col, targetRow, t);
+                int r_target = row+1;
+                //while there's space to move up
+                while (r_target < r_celling) {
+                        r_target ++;
+                    }
+                //while reach the celling
+                if(board.tile(col, r_target) == null) {
+                    board.move(col, r_target, t);
                     changed = true;
+                }
+                else if (board.tile(col, r_target).value() == t.value()) {
+                    board.move(col, r_target, t);
+                    score += t.value() * 2;
+                    r_celling --;
+                    changed = true;
+                }
+                else if (board.tile(col, r_target).value() != t.value()) {
+                    board.move(col, r_target-1, t);
+                    r_celling --;
+                    if (r_target != t.row()) {
+                        changed = true;
+                    }
                 }
             }
         }
@@ -187,27 +155,6 @@ public class Model extends Observable {
 
         checkGameOver();
         return changed;
-    }
-
-
-    public int[] findTargetPos(Tile tile, int r_celling) {
-        int c = tile.col();
-        int[] pos_target = new int[]{c,tile.row()};
-        for (int r = tile.row()+1; r <= r_celling; r++) {
-            if (board.tile(c,r) == null) {
-                if (r == r_celling) {
-                    pos_target[1] = r;
-                } else {
-                    continue;
-                }
-            } else if (board.tile(c,r).value() == tile.value()) {
-                pos_target[1] = r;
-            } else {
-                pos_target[1] = r-1;
-            }
-        }
-
-        return pos_target;
     }
 
     /** Checks if the game is over and sets the gameOver variable
