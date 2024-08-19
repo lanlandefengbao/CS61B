@@ -108,46 +108,87 @@ public class Model extends Observable {
      *    value, then the leading two tiles in the direction of motion merge,
      *    and the trailing tile does not.
      * */
-    public boolean tilt(Side side) {
-        boolean changed;
-        changed = false;
+//    public boolean tilt(Side side) {
+//        boolean changed;
+//        changed = false;
+//
+//        // TODO: Modify this.board (and perhaps this.score) to account
+//        // for the tilt to the Side SIDE. If the board changed, set the
+//        // changed local variable to true.
+//        boolean isMerged;
+//        boolean isMoved;
+//        board.setViewingPerspective(side);
+//        for (int c = 0; c < board.size(); c++) {
+//            int r_celling = board.size()-1;
+//            for (int r = board.size()-2; r >= 0; r--) {
+//                Tile t_current = board.tile(c, r);
+//                if (t_current == null) {
+//                    continue;
+//                } else {
+//                    int[] pos_target = findTargetPos(t_current, r_celling);
+//                    int[] pos_current = new int[] {t_current.col(), t_current.row()};
+//                    isMoved = (Arrays.equals(pos_target, pos_current));
+//                    isMerged = board.move(pos_target[0], pos_target[1], t_current);
+//                }
+//                //if merge happened, we update the r_celling and change the score
+//                if (isMerged) {
+//                    score += board.tile(c, r_celling).value();
+//                    r_celling -= 1;
+//                }
+//                if (isMoved) {
+//                    changed = true;
+//                }
+//            }
+//        }
+//        board.setViewingPerspective(Side.NORTH);
+//
+//        checkGameOver();
+//        if (changed) {
+//            setChanged();
+//        }
+//        return changed;
+//    } //ONLY DEAL WITH 'UP' CORRECTLY
 
-        // TODO: Modify this.board (and perhaps this.score) to account
-        // for the tilt to the Side SIDE. If the board changed, set the
-        // changed local variable to true.
-        boolean isMerged;
-        boolean isMoved;
+    public boolean tilt(Side side) {
+        boolean changed = false;
         board.setViewingPerspective(side);
-        for (int c = 0; c < board.size(); c++) {
-            int r_celling = board.size()-1;
-            for (int r = board.size()-2; r >= 0; r--) {
-                Tile t_current = board.tile(c, r);
-                if (t_current == null) {
+
+        for (int col = 0; col < board.size(); col++) {
+            int lastMergeRow = board.size(); // 用来记录上一次合并的位置
+            for (int row = board.size() - 2; row >= 0; row--) {
+                Tile t = board.tile(col, row);
+                if (t == null) {
                     continue;
-                } else {
-                    int[] pos_target = findTargetPos(t_current, r_celling);
-                    int[] pos_current = new int[] {t_current.col(), t_current.row()};
-                    isMoved = (Arrays.equals(pos_target, pos_current));
-                    isMerged = board.move(pos_target[0], pos_target[1], t_current);
                 }
-                //if merge happened, we update the r_celling and change the score
-                if (isMerged) {
-                    score += board.tile(c, r_celling).value();
-                    r_celling -= 1;
+
+                int targetRow = row;
+                while (targetRow + 1 < lastMergeRow && board.tile(col, targetRow + 1) == null) {
+                    targetRow++;
                 }
-                if (isMoved) {
+
+                if (targetRow + 1 < lastMergeRow && board.tile(col, targetRow + 1).value() == t.value()) {
+                    targetRow++;
+                    score += t.value() * 2; // 更新分数
+                    lastMergeRow = targetRow; // 更新上次合并的位置
+                }
+
+                if (targetRow != row) {
+                    board.move(col, targetRow, t);
                     changed = true;
                 }
             }
         }
+
         board.setViewingPerspective(Side.NORTH);
 
-        checkGameOver();
         if (changed) {
             setChanged();
         }
+
+        checkGameOver();
         return changed;
     }
+
 
     public int[] findTargetPos(Tile tile, int r_celling) {
         int c = tile.col();
