@@ -42,7 +42,7 @@ public class IntList {
             // Converts an Integer to a String!
             return String.valueOf(first);
         } else {
-            return first + " -> " + rest.toString();
+            return String.valueOf(first) + " -> " + rest.toString();
         }
     }
 
