@@ -1,5 +1,6 @@
 package timingtest;
 
+
 /** An SLList is a list of integers, which hides the terrible truth
  * of the nakedness within. */
 public class SLList<Item> {
@@ -27,6 +28,17 @@ public class SLList<Item> {
 		sentinel = new IntNode(null, null);
 		sentinel.next = new IntNode(x, null);
 		size = 1;
+	}
+
+	public SLList(Item[] x) {
+		sentinel = new IntNode(null, null);
+		size = 0;
+		IntNode cur = sentinel;
+		for (int i = 0; i < x.length; i++) {
+			cur.next = new IntNode(x[i], null);
+			cur = cur.next;
+			size += 1;
+		}
 	}
 
 	/** Adds x to the front of the list. */

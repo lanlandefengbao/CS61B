@@ -24,6 +24,13 @@ public class AList<Item> {
         size = 0;
     }
 
+    /** my helper function */
+    public void fillAList(Item[] lst) {
+        for (int i = 0; i < lst.length; i++) {
+            addLast(lst[i]);
+        }
+    }
+
     /** Resizes the underlying array to the target capacity. */
     private void resize(int capacity) {
         Item[] a = (Item[]) new Object[capacity];
@@ -34,7 +41,7 @@ public class AList<Item> {
     /** Inserts X into the back of the list. */
     public void addLast(Item x) {
         if (size == items.length) {
-            resize(size + 1);
+            resize(size * 2);
         }
 
         items[size] = x;
