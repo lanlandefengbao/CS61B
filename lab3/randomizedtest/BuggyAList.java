@@ -60,11 +60,19 @@ public class BuggyAList<Item> {
       * returns deleted item. */
     public Item removeLast() {
         if ((size < items.length / 4) && (size > 4)) {
-            resize(size / 4);
+            resize(items.length / 4);
         }
         Item x = getLast();
         items[size - 1] = null;
         size = size - 1;
         return x;
+    }
+
+    public String toString() {
+        String res = "";
+        for (int i = 0; i < size; i++) {
+            res += items[i] + ", " ;
+        }
+        return res;
     }
 }

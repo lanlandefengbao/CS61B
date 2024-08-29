@@ -52,4 +52,11 @@ public class AListNoResizing<Item> {
         size = size - 1;
         return x;
     }
+    public String toString() {
+        String res = "";
+        for (int i = 0; i < size; i++) {
+            res += items[i] + ", ";
+        }
+        return res;
+    }
 }
