@@ -67,6 +67,9 @@ public class ArrayDeque <type> {
     }
 
     public type removeFirst() {
+        if (sizeFront == 0) {
+            return null;
+        }
         type res = qequeFront[sizeFront - 1];
         qequeFront[sizeFront - 1] = null;
         sizeFront -= 1;
@@ -77,6 +80,9 @@ public class ArrayDeque <type> {
     }
 
     public type removeLast() {
+        if (sizePost == 0) {
+            return null;
+        }
         type res = qequePost[sizePost - 1];
         qequePost[sizePost - 1] = null;
         sizePost -= 1;
