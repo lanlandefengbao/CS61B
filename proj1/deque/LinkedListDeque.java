@@ -105,6 +105,20 @@ public class LinkedListDeque<type> {
         return cur;
     }
 
+    public void insert(type x, int i ) {
+        if (i > size) {
+            return;
+        }
+        ListNode cur = sentinel.next;
+        while (i > 1) {
+            cur = cur.next;
+            i -= 1;
+        }
+        ListNode newNode = new ListNode(x, cur, cur.previous);
+        cur.previous.next = newNode;
+        cur.previous = newNode;
+    }
+
     public String toString() {
         String res = String.valueOf(sentinel.val);
         ListNode cur = sentinel.next;
@@ -121,13 +135,9 @@ public class LinkedListDeque<type> {
         x.addFirst(2);
         x.addFirst(3);
         System.out.println(x);
-        System.out.println(x.last.val);
-        System.out.println(x.last.previous.val);
-        System.out.println(x.last.previous.previous.val);
-        x.removeLast();
-        System.out.println(x.last.val);
-        System.out.println(x.get(1).val);
-        System.out.println(x.get(10));
+        x.insert(7,2);
+        x.insert(10,10);
+        System.out.println(x);
     }
 
 }

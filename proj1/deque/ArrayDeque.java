@@ -70,12 +70,12 @@ public class ArrayDeque <type> {
         if (sizeFront == 0) {
             return null;
         }
-        type res = qequeFront[sizeFront - 1];
-        qequeFront[sizeFront - 1] = null;
-        sizeFront -= 1;
         if (sizeFront <= qequeFront.length / 4) {
             resize(0, sizeFront * 2);
         }
+        type res = qequeFront[sizeFront - 1];
+        qequeFront[sizeFront - 1] = null;
+        sizeFront -= 1;
         return res;
     }
 
@@ -83,12 +83,12 @@ public class ArrayDeque <type> {
         if (sizePost == 0) {
             return null;
         }
-        type res = qequePost[sizePost - 1];
-        qequePost[sizePost - 1] = null;
-        sizePost -= 1;
         if (sizePost <= qequePost.length / 4) {
             resize(1, sizePost * 2);
         }
+        type res = qequePost[sizePost - 1];
+        qequePost[sizePost - 1] = null;
+        sizePost -= 1;
         return res;
     }
 
@@ -115,11 +115,11 @@ public class ArrayDeque <type> {
     }
 
     public static void main(String[] arg) {
-        ArrayDeque<Integer> x = new ArrayDeque<>();
+        ArrayDeque x = new ArrayDeque<>();
         x.addFirst(1);
         x.addFirst(2);
-        x.addFirst(3);
-        x.addLast(1);
+        x.addFirst("a");
+        x.addLast(new int[]{1,2,3});
         x.addLast(4);
         x.addFirst(5);
         x.removeFirst();
