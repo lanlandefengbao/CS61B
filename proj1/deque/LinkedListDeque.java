@@ -1,16 +1,65 @@
 package deque;
 
-public class LinkedListDeque<type> {
+import java.util.Iterator;
+
+public class LinkedListDeque<T> implements Iterable<T>, Deque<T>{
 
     private ListNode sentinel;
     private ListNode last;
     private int size;
 
+    @Override
+    public Iterator<T> iterator() {
+        return new DequeIterator();
+    }
+
+    private class DequeIterator implements Iterator<T> {
+
+        private ListNode cur = sentinel.next;
+
+        @Override
+        public boolean hasNext() {
+            return cur != null;
+        }
+
+        @Override
+        public T next() {
+            T res = cur.val;
+            cur = cur.next;
+            return res;
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        }
+        if (o instanceof LinkedListDeque Deque) {
+            if (Deque.size != size) {
+                return false;
+            }
+            ListNode cur1 = sentinel;
+            ListNode cur2 = Deque.sentinel;
+            while (cur1 != null) {
+                if (cur1.val == cur2.val) {
+                    cur1 = cur1.next;
+                    cur2 = cur2.next;
+                }
+                else {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
     private class ListNode {
-        private type val;
+        private T val;
         private ListNode next;
         private ListNode previous;
-        private ListNode(type value, ListNode nxt, ListNode prev) {
+        private ListNode(T value, ListNode nxt, ListNode prev) {
             val = value;
             next = nxt;
             previous = prev;
@@ -18,12 +67,13 @@ public class LinkedListDeque<type> {
     }
 
     public LinkedListDeque() {
-        sentinel = new ListNode((type) "sentinel", null, null);
+        sentinel = new ListNode((T) "sentinel", null, null);
         last = sentinel;
         size = 0;
     }
 
-    public void addFirst(type x) {
+    @Override
+    public void addFirst(T x) {
         ListNode first = new ListNode(x, sentinel.next, sentinel);
         if (size < 1) {
             last = first;
@@ -35,24 +85,28 @@ public class LinkedListDeque<type> {
         size ++;
     }
 
-    public void addLast(type x) {
+    @Override
+    public void addLast(T x) {
         last.next = new ListNode(x, null, last);
         last = last.next;
         size ++;
     }
 
-    public boolean isEmpty() {
-        if (size == 0) {
-            return true;
-        }
-        return false;
-    }
+//    @Override
+//    public boolean isEmpty() {
+//        if (size == 0) {
+//            return true;
+//        }
+//        return false;
+//    }
 
+    @Override
     public int size() {
         return size;
     }
 
-    public String printDeque() {
+    @Override
+    public void printDeque() {
         String res = "";
         ListNode cur = sentinel.next;
         while (cur != null) {
@@ -64,10 +118,11 @@ public class LinkedListDeque<type> {
             }
             cur = cur.next;
         }
-        return res;
+        System.out.println(res);
     }
 
-    public type removeFirst() {
+    @Override
+    public T removeFirst() {
         if (sentinel.next == null) {
             return null;
         }
@@ -79,19 +134,21 @@ public class LinkedListDeque<type> {
         }
     }
 
-    public type removeLast() {
+    @Override
+    public T removeLast() {
         if (sentinel.next == null) {
             return null;
         }
         ListNode pre = last.previous;
         pre.next = null;
-        type res = last.val;
+        T res = last.val;
         last = pre;
         size --;
         return res;
     }
 
-    public ListNode get(int i) {
+    @Override
+    public T get(int i) {
         ListNode cur = sentinel.next;
         while (i > 0) {
             if (cur != null) {
@@ -102,10 +159,22 @@ public class LinkedListDeque<type> {
                 return null;
             }
         }
-        return cur;
+        return cur.val;
     }
 
-    public void insert(type x, int i ) {
+    public T getRecursive(int index) {
+        if (sentinel == null) {
+            return null;
+        }
+        if (index == 0) {
+            return last.val;
+        }
+//        return getRecursive(index -= 1);
+        return getRecursive(--index);
+    }
+
+
+    public void insert(T x, int i ) {
         if (i > size) {
             return;
         }
@@ -138,6 +207,8 @@ public class LinkedListDeque<type> {
         x.insert(7,2);
         x.insert(10,10);
         System.out.println(x);
+        System.out.println(x.get(3));
+        System.out.println(x.getRecursive(3));
     }
 
 }

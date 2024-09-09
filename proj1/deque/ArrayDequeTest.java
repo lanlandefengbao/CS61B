@@ -30,4 +30,16 @@ public class ArrayDequeTest {
 
     }
 
+    @Test
+    public void testEquals() {
+        ArrayDeque<Integer> x = new ArrayDeque<>();
+        ArrayDeque<Integer> y = new ArrayDeque<>();
+        for (int i = 0; i < 20; i++) {
+            x.addFirst(i);
+            y.addFirst(i);
+        }
+        System.out.println(x.equals(y));
+        System.out.println(x);
+    }
+
 }
