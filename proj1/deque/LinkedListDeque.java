@@ -35,12 +35,12 @@ public class LinkedListDeque<T> implements Iterable<T>, Deque<T>{
         if (o == this) {
             return true;
         }
-        if (o instanceof LinkedListDeque Deque) {
-            if (Deque.size != size) {
+        if (o instanceof LinkedListDeque D) {
+            if (D.size != size) {
                 return false;
             }
             ListNode cur1 = sentinel;
-            ListNode cur2 = Deque.sentinel;
+            ListNode cur2 = D.sentinel;
             while (cur1 != null) {
                 if (cur1.val == cur2.val) {
                     cur1 = cur1.next;

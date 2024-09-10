@@ -29,6 +29,7 @@ public class ArrayDeque <T> implements Iterable<T>, Deque<T> {
         else if(frontNext == size-1){
             arraycopy(items, 0, newArray, 0,size);
         }
+
         items = newArray;
         frontNext = capacity-1;
         postNext = size;
@@ -187,9 +188,9 @@ public class ArrayDeque <T> implements Iterable<T>, Deque<T> {
         if (o == this) {
             return true;
         }
-        if (o instanceof ArrayDeque Deque) {
+        if (o instanceof ArrayDeque D) {
             for (int i = 0; i < this.size(); i++) {
-                if (this.get(i) == Deque.get(i)) {
+                if (this.get(i) == D.get(i)) {
                     continue;
                 }
                 else {
