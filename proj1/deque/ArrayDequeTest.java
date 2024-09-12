@@ -26,6 +26,10 @@ public class ArrayDequeTest {
             else if (actionIdx == 3) {
                 x.removeFirst();
             }
+            else{
+                int element = StdRandom.uniform(0,100);
+                x.get(element);
+            }
         }
 
     }

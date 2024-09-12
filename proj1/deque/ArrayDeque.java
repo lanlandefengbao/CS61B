@@ -29,7 +29,6 @@ public class ArrayDeque <T> implements Iterable<T>, Deque<T> {
         else if(frontNext == size-1){
             arraycopy(items, 0, newArray, 0,size);
         }
-
         items = newArray;
         frontNext = capacity-1;
         postNext = size;
@@ -141,24 +140,39 @@ public class ArrayDeque <T> implements Iterable<T>, Deque<T> {
         return res;
     }
 
+//    @Override
+//    public T get(int i) {
+//        if(i >= size){
+//            return null;
+//        }
+//        int targetIdx;
+//        if(frontNext == items.length-1){
+//            if(size != items.length) {
+//                targetIdx = i;
+//            }
+//            else{
+//                targetIdx = (items.length-1)-i;
+//            }
+////            targetIdx = i;
+//        }
+//        else{
+//            int dev = (items.length-1)-frontNext;
+//            if(i <= dev){
+//                targetIdx = frontNext+i;
+//            }
+//            else{
+//                targetIdx = i-dev;
+//            }
+//        }
+//        return items[targetIdx];
+//    }
+
     @Override
     public T get(int i) {
         if(i >= size){
             return null;
         }
-        int targetIdx;
-        if(frontNext == items.length-1){
-            targetIdx = i;
-        }
-        else{
-            int dev = (items.length-1)-frontNext;
-            if(i <= dev){
-                targetIdx = frontNext+i;
-            }
-            else{
-                targetIdx = i-dev;
-            }
-        }
+        int targetIdx = (frontNext + 1 + i) % items.length;
         return items[targetIdx];
     }
 
@@ -188,9 +202,9 @@ public class ArrayDeque <T> implements Iterable<T>, Deque<T> {
         if (o == this) {
             return true;
         }
-        if (o instanceof ArrayDeque D) {
+        if (o instanceof ArrayDeque Deque) {
             for (int i = 0; i < this.size(); i++) {
-                if (this.get(i) == D.get(i)) {
+                if (this.get(i) == Deque.get(i)) {
                     continue;
                 }
                 else {
