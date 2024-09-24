@@ -140,33 +140,6 @@ public class ArrayDeque <T> implements Iterable<T>, Deque<T> {
         return res;
     }
 
-//    @Override
-//    public T get(int i) {
-//        if(i >= size){
-//            return null;
-//        }
-//        int targetIdx;
-//        if(frontNext == items.length-1){
-//            if(size != items.length) {
-//                targetIdx = i;
-//            }
-//            else{
-//                targetIdx = (items.length-1)-i;
-//            }
-////            targetIdx = i;
-//        }
-//        else{
-//            int dev = (items.length-1)-frontNext;
-//            if(i <= dev){
-//                targetIdx = frontNext+i;
-//            }
-//            else{
-//                targetIdx = i-dev;
-//            }
-//        }
-//        return items[targetIdx];
-//    }
-
     @Override
     public T get(int i) {
         if(i >= size){
