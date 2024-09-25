@@ -110,7 +110,7 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K,V>{
      * prints out your BSTMap in order of increasing Key
      */
     // we need in-order traverse
-    public void printInorder(){
+    private void printInorder(){
         System.out.println(traverse(root));
     }
 
@@ -140,14 +140,97 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K,V>{
         throw new UnsupportedOperationException();
     }
 
+    /** when removing a node:
+     * 1.if it has two substrees, replace it with right subtree's MINnode;
+     * 2.if it has one subtree, replace it with the subtree's root node (it must be a leaf node)
+     * 3.if it is the leaf node, just drop it */
+
     @Override
     public V remove(K key) {
-        throw new UnsupportedOperationException();
+        if(root == null){
+            return null;
+        }
+        V value = get(key);
+        substitute(findNode(key, root));
+        size -= 1;
+        return value;
     }
 
     @Override
     public V remove(K key, V value) {
         throw new UnsupportedOperationException();
+    }
+
+    private BSTtreeNode findNode(K key, BSTtreeNode cur) {
+        if(cur == null){
+            return null;
+        }
+        int gap = key.compareTo(cur.Key);
+        if(gap == 0){
+            return cur;
+        }
+        if(gap > 0){
+            return findNode(key, cur.right);
+        }
+        else{
+            return findNode(key, cur.left);
+        }
+    }
+
+    private BSTtreeNode findMinNode(BSTtreeNode cur){
+        if(cur.left == null){
+            return cur;
+        }
+        return findMinNode(cur.left);
+    }
+
+    private void gbc(K key, BSTtreeNode cur){
+        if(key.compareTo(cur.Key) == 0){
+            clear();
+        }
+        else{
+            if(key.compareTo(cur.left.Key) == 0){
+                cur.left = null;
+            }
+            else if(key.compareTo(cur.right.Key) == 0){
+                cur.right = null;
+            }
+            else{
+                if(key.compareTo(cur.Key) > 0){
+                    gbc(key, cur.right);
+                }
+                else if(key.compareTo(cur.Key) < 0){
+                    gbc(key, cur.left);
+                }
+            }
+        }
+    }
+
+    private void substitute(BSTtreeNode node) {
+        if(node.left == null && node.right == null){
+            gbc(node.Key, root);
+        }
+        else if(node.left == null){
+            node.Key = node.right.Key;
+            node.Value = node.right.Value;
+            node.right = null;
+        }
+        else if(node.right == null){
+            node.Key = node.left.Key;
+            node.Value = node.left.Value;
+            node.left = null;
+        }
+        else{
+            BSTtreeNode replacement = findMinNode(node.right);
+            node.Key = replacement.Key;
+            node.Value = replacement.Value;
+            if(replacement.right == null){
+                gbc(replacement.Key, root);
+            }
+            else{
+                substitute(replacement);
+            }
+        }
     }
 
     @Override
@@ -157,7 +240,11 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K,V>{
 
     private class BSTMapIterator implements Iterator<K> {
 
-        private BSTtreeNode cur = root;
+        private BSTtreeNode cur;
+
+        public BSTMapIterator(){
+            cur = root;
+        }
 
         @Override
         public boolean hasNext() {
@@ -185,6 +272,10 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K,V>{
         x.put("a", 1);
         x.put("b", 2);
         x.put("c", 3);
+        x.put("d", 4);
+        x.put("e", 5);
+        x.remove("d");
+//        x.put("d",5);
         x.printInorder();
         System.out.println(x.size());
     }
