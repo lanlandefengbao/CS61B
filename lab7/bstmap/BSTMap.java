@@ -1,5 +1,7 @@
 package bstmap;
 
+import edu.princeton.cs.algs4.BST;
+
 import java.util.Iterator;
 import java.util.Set;
 
@@ -140,36 +142,38 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K,V>{
         throw new UnsupportedOperationException();
     }
 
-    /** when removing a node:
-     * 1.if it has two substrees, replace it with right subtree's MINnode;
-     * 2.if it has one subtree, replace it with the subtree's root node (it must be a leaf node)
-     * 3.if it is the leaf node, just drop it */
+    /** when removing a specific node X:
+     * 1.find X, find X's right tree's minNode M(X's replacement)
+     * 2.delete M from X's right tree
+     * 3.replace X with M */
 
     @Override
     public V remove(K key) {
-        if(root == null){
+        BSTtreeNode node = findNode(key, root);
+        if(node == null){
             return null;
         }
-        V value = get(key);
-        substitute(findNode(key, root));
-        size -= 1;
-        return value;
+        BSTtreeNode replacement = findMinNode(node.right);
+        node.right = deleteMin(node.right);
+        node.Key = replacement.Key;
+        node.Value = replacement.Value;
+        return node.Value;
     }
 
     @Override
     public V remove(K key, V value) {
-        throw new UnsupportedOperationException();
+        return remove(key);
     }
 
-    private BSTtreeNode findNode(K key, BSTtreeNode cur) {
-        if(cur == null){
+    private BSTtreeNode findNode(K key, BSTtreeNode cur){
+        if(key == null){
             return null;
         }
         int gap = key.compareTo(cur.Key);
         if(gap == 0){
             return cur;
         }
-        if(gap > 0){
+        else if(gap > 0){
             return findNode(key, cur.right);
         }
         else{
@@ -184,53 +188,19 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K,V>{
         return findMinNode(cur.left);
     }
 
-    private void gbc(K key, BSTtreeNode cur){
-        if(key.compareTo(cur.Key) == 0){
-            clear();
-        }
-        else{
-            if(key.compareTo(cur.left.Key) == 0){
-                cur.left = null;
-            }
-            else if(key.compareTo(cur.right.Key) == 0){
-                cur.right = null;
-            }
-            else{
-                if(key.compareTo(cur.Key) > 0){
-                    gbc(key, cur.right);
-                }
-                else if(key.compareTo(cur.Key) < 0){
-                    gbc(key, cur.left);
-                }
-            }
-        }
+
+    private K findMinK(BSTtreeNode cur){
+        return findMinNode(cur).Key;
     }
 
-    private void substitute(BSTtreeNode node) {
-        if(node.left == null && node.right == null){
-            gbc(node.Key, root);
+    private BSTtreeNode deleteMin(BSTtreeNode cur){
+        if(cur.left == null){
+            size -= 1;
+            return cur.right;
         }
-        else if(node.left == null){
-            node.Key = node.right.Key;
-            node.Value = node.right.Value;
-            node.right = null;
-        }
-        else if(node.right == null){
-            node.Key = node.left.Key;
-            node.Value = node.left.Value;
-            node.left = null;
-        }
-        else{
-            BSTtreeNode replacement = findMinNode(node.right);
-            node.Key = replacement.Key;
-            node.Value = replacement.Value;
-            if(replacement.right == null){
-                gbc(replacement.Key, root);
-            }
-            else{
-                substitute(replacement);
-            }
-        }
+        cur.left = deleteMin(cur.left);
+        size -= 1;
+        return cur;
     }
 
     @Override
@@ -257,14 +227,6 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K,V>{
             BSTMap.this.remove(key); //restructure current BSTtree
             return key;
         }
-    }
-
-    private K findMinK(BSTtreeNode cur){
-        if(cur.left == null){
-            K key = cur.Key;
-            return key;
-        }
-        return findMinK(cur.left);
     }
 
     public static void main(String[] args){
