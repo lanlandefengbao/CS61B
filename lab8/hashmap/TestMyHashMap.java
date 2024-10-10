@@ -158,4 +158,16 @@ public class TestMyHashMap {
         assertEquals(345, studentIDs.get("evil alan").intValue());
         assertEquals(studentIDs.get("evil alan"), studentIDs.get("alan"));
     }
+
+    @Test
+    public void sanityIteratorTest() {
+        MyHashMap<String, Integer> x = new MyHashMap<>();
+        x.put("a",1);
+        x.put("b", 2);
+        x.put("c",3);
+
+        for(String k : x){
+            System.out.println(k);
+        }
+    }
 }

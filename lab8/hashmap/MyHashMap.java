@@ -105,14 +105,23 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
 
     @Override
     public void clear() {
-        buckets = createTable(16);
         size = 0;
+        cntBucket = 16;
+        buckets = createTable(cntBucket);
     }
 
     @Override
     public boolean containsKey(K key) {
         int keyHash = (key.hashCode() & 0x7fffffff) % cntBucket;
-        return buckets[keyHash] != null;
+        if(buckets[keyHash] == null) {
+            return false;
+        }
+        for(Node n : buckets[keyHash]) {
+            if(n.key.equals(key)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -169,16 +178,23 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
         if (buckets[keyHash] == null) {
             buckets[keyHash] = createBucket();
             buckets[keyHash].add(createNode(key, value));
+            size += 1;
         } else {
             // iterating the exist collection to testify whether need to update an old key's value
+            // all relevant Iterators(for int[] and for LinkedList) has been implemented by default
+            boolean replaced = false;
             for (Node n : buckets[keyHash]) {
                 if (n.key.equals(key)) {
                     buckets[keyHash].remove(n);
+                    replaced = true;
+                    break;
                 }
             }
             buckets[keyHash].add(createNode(key, value));
+            if(!replaced){
+                size += 1;
+            }
         }
-        size += 1;
     }
 
     @Override
@@ -197,64 +213,65 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
 
     @Override
     public V remove(K key) {
+        if(!containsKey(key)) {
+            throw new UnsupportedOperationException("no such key found in current HashMap");
+        }
+        int keyHash = (key.hashCode() & Integer.MAX_VALUE) % cntBucket;
+        for(Node n : buckets[keyHash]) {
+            if(n.key == key) {
+                buckets[keyHash].remove(n);
+                size -= 1;
+                return n.value;
+            }
+        }
         return null;
     }
 
     @Override
     public V remove(K key, V value) {
-        return null;
+        return remove(key);
     }
 
-        @Override
+    // allowing iterating through keys with enhanced for statement
+    @Override
     public Iterator<K> iterator() {
-        return new nodeIterator();
+        return new keyIterator();
     }
-//
-//    class nodeIterator implements Iterator<K> {
-//
-//        @Override
-//        public boolean hasNext() {
-//            return
-//        }
-//
-//        @Override
-//        public K next() {
-//            return
-//        }
-//    }
-    
-    class nodeIterator implements Iterator<K> {
-        private int bucketIndex = 0;
-        private Iterator<Node> nodeIterator = getNextBucketIterator();
 
-        private Iterator<Node> getNextBucketIterator() {
-            while (bucketIndex < buckets.length) {
-                if (buckets[bucketIndex] != null && !buckets[bucketIndex].isEmpty()) {
-                    return buckets[bucketIndex].iterator();
+    class keyIterator implements Iterator<K> {
+
+        int bucketIdx = 0;
+        private Iterator<Node> getNodeIterator() {
+            while(bucketIdx < buckets.length) {
+                if(buckets[bucketIdx] != null) {
+                    Iterator<Node> It = buckets[bucketIdx].iterator();
+                    bucketIdx += 1;
+                    return It;
                 }
-                bucketIndex++;
+                bucketIdx += 1;
             }
-            return Collections.emptyIterator();
+            return null;
         }
+
+        Iterator<Node> nodeIterator = getNodeIterator();
 
         @Override
         public boolean hasNext() {
-            if (nodeIterator.hasNext()) {
-                return true;
-            } else {
-                bucketIndex++;
-                nodeIterator = getNextBucketIterator();
-                return nodeIterator.hasNext();
+            if(nodeIterator == null) {
+                return false;
             }
+            return nodeIterator.hasNext();
         }
 
         @Override
         public K next() {
-            if (!hasNext()) {
-                throw new NoSuchElementException();
+            K res =  nodeIterator.next().key;
+            if(!nodeIterator.hasNext()) {
+                nodeIterator = getNodeIterator();
             }
-            return nodeIterator.next().key;
+            return res;
         }
     }
+
 }
 
