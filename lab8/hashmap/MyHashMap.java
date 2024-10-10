@@ -37,6 +37,7 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
      */
     public MyHashMap() {
         buckets = new Collection[cntBucket];
+        
     }
 
     public MyHashMap(int initialSize) {
