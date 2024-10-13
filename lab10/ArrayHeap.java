@@ -225,15 +225,16 @@ public class ArrayHeap<T> implements ExtrinsicPQ<T> {
      */
     @Override
     public void changePriority(T item, double priority) {
-        int idx = getIdx(item);
-        contents[idx].myPriority = priority;
-        if(min(idx, parentIndex(idx)) == idx) {
-            swim(idx);
-        }
-        else {
-            int lowerMin = min(leftIndex(idx), rightIndex(idx));
-            if(min(idx, lowerMin) == lowerMin) {
-                sink(idx);
+        Integer idx = getIdx(item);
+        if(idx != null) {
+            contents[idx].myPriority = priority;
+            if (min(idx, parentIndex(idx)) == idx) {
+                swim(idx);
+            } else {
+                int lowerMin = min(leftIndex(idx), rightIndex(idx));
+                if (min(idx, lowerMin) == lowerMin) {
+                    sink(idx);
+                }
             }
         }
     }
@@ -241,7 +242,7 @@ public class ArrayHeap<T> implements ExtrinsicPQ<T> {
     private Integer getIdx(T item) {
         int curIdx = 1;
         while(curIdx < size) {
-            if(contents[curIdx].myItem == item) {
+            if(contents[curIdx].myItem.equals(item)) {
                 return curIdx;
             }
             curIdx += 1;
