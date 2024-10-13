@@ -227,14 +227,13 @@ public class ArrayHeap<T> implements ExtrinsicPQ<T> {
     public void changePriority(T item, double priority) {
         Integer idx = getIdx(item);
         if(idx != null) {
-            contents[idx].myPriority = priority;
-            if (min(idx, parentIndex(idx)) == idx) {
-                swim(idx);
+
+            if (priority > contents[idx].myPriority) {
+                contents[idx].myPriority = priority;
+                sink(idx);
             } else {
-                int lowerMin = min(leftIndex(idx), rightIndex(idx));
-                if (min(idx, lowerMin) == lowerMin) {
-                    sink(idx);
-                }
+                contents[idx].myPriority = priority;
+                swim(idx);
             }
         }
     }
