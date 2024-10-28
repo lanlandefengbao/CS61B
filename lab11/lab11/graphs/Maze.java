@@ -3,12 +3,9 @@ package lab11.graphs;
 import edu.princeton.cs.algs4.StdDraw;
 import edu.princeton.cs.algs4.In;
 
-import java.util.Random;
+import java.util.*;
 import java.awt.Color;
 
-import java.util.Observer;
-import java.util.Observable;
-import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -60,6 +57,34 @@ public class Maze implements Observer {
 
         if (!wallExists(x, y, "West")) {
             neighbors.add(xyTo1D(x - 1, y));
+        }
+
+        return neighbors;
+    }
+
+    /**
+     * Returns neighbor vertices of vertex v with weights.
+     * Here we suppose all edges with weight equal to 1.
+     */
+
+    public Iterable<int[]> adjWithWeights(int v) {
+        int x = toX(v);
+        int y = toY(v);
+        HashSet<int[]> neighbors = new HashSet<>();
+        if (!wallExists(x, y, "North")) {
+            neighbors.add(new int[] {xyTo1D(x, y + 1), 1});
+        }
+
+        if (!wallExists(x, y, "East")) {
+            neighbors.add(new int[] {xyTo1D(x + 1, y), 1});
+        }
+
+        if (!wallExists(x, y, "South")) {
+            neighbors.add(new int[] {xyTo1D(x, y - 1), 1});
+        }
+
+        if (!wallExists(x, y, "West")) {
+            neighbors.add(new int[] {xyTo1D(x - 1, y), 1});
         }
 
         return neighbors;
