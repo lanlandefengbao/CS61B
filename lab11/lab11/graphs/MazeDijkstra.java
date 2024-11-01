@@ -12,7 +12,6 @@ public class MazeDijkstra extends MazeExplorer {
 
     private int s;
     private int t;
-    private boolean found = false;
     private ModifiedPQ<int[]> distPQ;
 
     // define the way of ordering in PQ
@@ -44,23 +43,18 @@ public class MazeDijkstra extends MazeExplorer {
     }
 
     private void Dijkstra() {
-        while(distPQ.peek() != null) {
+        while (distPQ.peek() != null) {
             int cur = distPQ.poll()[0];
             marked[cur] = true;
-            for(int[] i : maze.adjWithWeights(cur)) {
-                int distNew;
-                if(!marked[i[0]]) {
-                    if(distTo[i[0]] == Integer.MAX_VALUE) {
-                        distNew = i[1];
+            for (int[] i : maze.adjWithWeights(cur)) {
+                if (!marked[i[0]]) {
+                    int distNew = distTo[cur] + i[1];
+                    if (distNew < distTo[i[0]]) {
+                        distTo[i[0]] = distNew;
+                        edgeTo[i[0]] = cur;
+                        distPQ.changePriority(new int[]{i[0], distTo[i[0]]}, distNew);
                     }
-                    else {
-                        distNew = Math.min(i[1]+distTo[cur], distTo[i[0]]);
-                    }
-                    distTo[i[0]] = distNew;
-                    edgeTo[i[0]] = cur;
-                    distPQ.changePriority(new int[]{i[0], distTo[i[0]]}, distNew);
                 }
-
             }
             announce();
         }
