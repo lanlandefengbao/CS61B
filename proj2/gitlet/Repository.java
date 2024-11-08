@@ -1,6 +1,8 @@
 package gitlet;
 
 import java.io.File;
+import java.util.Date;
+
 import static gitlet.Utils.*;
 
 // TODO: any imports you need here
@@ -23,7 +25,14 @@ public class Repository {
     /** The current working directory. */
     public static final File CWD = new File(System.getProperty("user.dir"));
     /** The .gitlet directory. */
-    public static final File GITLET_DIR = join(CWD, ".gitlet");
+    public static final File GITLET_SYSTEM = join(CWD, ".gitlet");
 
     /* TODO: fill in the rest of this class. */
+    /** Sotres historical commits */
+    public static final File COMMIT_FOLDER = Utils.join(GITLET_SYSTEM, "objects");
+    public static final File INITIAL_COMMIT = Utils.join(COMMIT_FOLDER, Utils.sha1(new Date(0).toString(), "initial commit"));
+    /** Stores branches */
+    public static final File BRANCH_FOLDER = Utils.join(GITLET_SYSTEM, "refs");
+    public static final File MASTER = Utils.join(BRANCH_FOLDER, "MASTER");
+    public static final File HEAD = Utils.join(BRANCH_FOLDER, "HEAD");
 }

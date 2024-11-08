@@ -40,41 +40,27 @@ public class Commit {
 
     /* TODO: fill in the rest of this class. */
 
-    /** Calculate SHA-1 based on object's content. For initial Commit. */
-    public String hash0() {
-        return Utils.sha1(time, logMessage);
-    }
-
-    /** Write the initial Commit object to a specific file, meanwhile update the branches. */
-    public void setupPersistence(File SYSTEM_FOLDER) {
-        File COMMIT = Utils.join(SYSTEM_FOLDER, "objects", hash0());
-        COMMIT.getParentFile().mkdirs();
-        Utils.writeContents(COMMIT, time, logMessage);
-        File MASTER = Utils.join(SYSTEM_FOLDER, "refs", "MASTER");
-        MASTER.getParentFile().mkdirs();
-        Utils.writeContents(MASTER, hash0());
-        File HEAD = Utils.join(SYSTEM_FOLDER, "refs", "HEAD");
-        HEAD.getParentFile().mkdirs();
-        Utils.writeContents(HEAD, hash0());
-    }
-
-    /** Calculate SHA-1 based on object's content. For normal Commit. */
-    public String hash1() {
+    /** Calculate SHA-1 based on object's content. */
+    public String hash() {
         return Utils.sha1(time, logMessage, Blobs, Parent);
     }
 
-    /** Write a normal Commit object to a specific file, meanwhile update the branches. */
-    public void setupPersistence(File SYSTEM_FOLDER, boolean match) {
-        File COMMIT = Utils.join(SYSTEM_FOLDER, "objects", hash1());
-        Utils.writeContents(COMMIT, time, logMessage, Blobs, Parent);
-        File MASTER = Utils.join(SYSTEM_FOLDER, "refs", "MASTER");
-        Utils.restrictedDelete(MASTER);
-        Utils.writeContents(MASTER, hash1());
-        // if HEAD matches MASTER, update HEAD as well.
-        File HEAD = Utils.join(SYSTEM_FOLDER, "refs", "HEAD");
-        if(match) {
-            Utils.restrictedDelete(HEAD);
-            Utils.writeContents(HEAD, hash1());
+    /** Write the Commit object to current gitlet system, meanwhile update the branches. */
+    public void makeCommit() {
+        if(!Repository.INITIAL_COMMIT.exists()) {
+            Utils.writeContents(Repository.INITIAL_COMMIT, new Date(0).toString(), "initial commit");
+            Utils.writeContents(Repository.MASTER, Utils.sha1(new Date(0).toString(), "initial commit"));
+            Utils.writeContents(Repository.HEAD, Utils.sha1(new Date(0).toString(), "initial commit"));
+        }
+        else {
+            File COMMIT = Utils.join(Repository.COMMIT_FOLDER, hash());
+            Utils.writeContents(COMMIT, time, logMessage, Blobs, Parent);
+            Utils.restrictedDelete(Repository.MASTER);
+            Utils.writeContents(Repository.MASTER, hash());
+            if(Utils.readContentsAsString(Repository.HEAD).equals(Utils.readContentsAsString(Repository.MASTER))) {
+                Utils.restrictedDelete(Repository.HEAD);
+                Utils.writeContents(Repository.HEAD, hash());
+            }
         }
     }
 }
