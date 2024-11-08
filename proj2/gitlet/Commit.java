@@ -21,15 +21,15 @@ public class Commit {
      * variable is used. We've provided one example for `message`.
      */
 
-    private String time;
+    private String timeStamp;
     private String logMessage;
-    private String Blobs;
+    private String[] Blobs;
     private String Parent;
 
     /** Construct the initial commit object*/
     public Commit() {
         logMessage = "initial commit";
-        time = new Date(0).toString();
+        timeStamp = new Date(0).toString();
     }
 
     /** Construct the commit object based on specific args*/
@@ -40,9 +40,16 @@ public class Commit {
 
     /* TODO: fill in the rest of this class. */
 
-    /** Calculate SHA-1 based on object's content. */
+    /** Calculate SHA-1 for a normal Commit object. */
     public String hash() {
-        return Utils.sha1(time, logMessage, Blobs, Parent);
+        StringBuilder cString = new StringBuilder();
+        cString.append(timeStamp);
+        cString.append(logMessage);
+        cString.append(Parent);
+        for(String s : Blobs) {
+            cString.append(s);
+        }
+        return Utils.sha1(cString.toString());
     }
 
     /** Write the Commit object to current gitlet system, meanwhile update the branches. */
@@ -54,7 +61,7 @@ public class Commit {
         }
         else {
             File COMMIT = Utils.join(Repository.COMMIT_FOLDER, hash());
-            Utils.writeContents(COMMIT, time, logMessage, Blobs, Parent);
+            Utils.writeContents(COMMIT, timeStamp, logMessage, Blobs, Parent);
             Utils.restrictedDelete(Repository.MASTER);
             Utils.writeContents(Repository.MASTER, hash());
             if(Utils.readContentsAsString(Repository.HEAD).equals(Utils.readContentsAsString(Repository.MASTER))) {

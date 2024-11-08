@@ -18,16 +18,15 @@ None
 #### Fields
 
 1. #### StagingArea
-   Storing the latest __Blobs__ that are _staged_ (confirmed) and ready for _commit_. 
-   Its contents should be wiped out immediately after _commit_.
+   Storing the current temporal `Blob` objects that are _staged_ (confirmed) for _commit_. 
+   These objects should be wiped out immediately after _commiting_.
 2. #### Commits
-   Contains all historical `Commit` objects, each version involves `metadata` (_log message_, _timestamp_) and specific _Blobs_.
+   Contains all historical `Commit` objects, each version involves `metadata` (_log message_, _timestamp_), `UID of Parent Commit` and `UID of Blobs objects`.
 3. #### Blobs
    Contains all historical `Blob` objects, each one of which is a snapshot of a specific file (Mapping of file's name and its content). 
-   Every single `commit` object, except the initial one, 
-   would have several `Blob` objects representing the status of files at that _commit_ version.
-   Whenever files in CWD is different with `HEAD branch`, new `Blob` object(s) is temporarily formed (untracked)
-   and will only persist if _committed_.
+   Every single `commit` object, except the initial one, would link with several `Blob` objects.
+   Version control starting with forming __temporal__ `Blob` object(s) by comparing files in CWD with `HEAD branch`, 
+   which then be used in _staging_ and _commiting_ process. A `Blob` object should only persist after _commiting_.
 
 
 ### Commit
@@ -40,10 +39,10 @@ The name of each `Commit` object is the SHA1 computed based on the values of its
 [//]: # ()
 [//]: # (2. #### Master)
 3. #### `private String logMessage`
-4. #### `private Date timestamp`
-5. #### `private String Blobs`
+4. #### `private String timestamp`
+5. #### `private String[] Blobs`
    Represents the `Blob` objects at that _commit_ version.
-   However, for the same reason as `Parent`, it should not be a `Blob` object.
+   However, for the same reason as below, it should not be a `Blob` object.
 6. #### `private String Parent`
    Represents the `Commit` object that the current `Commit` is inherited from. 
    Itself should not be a `Commit` object since JAVA _Serialization_ automatically follows pointers, 
@@ -62,8 +61,9 @@ The name of each `Commit` object is the SHA1 computed based on the values of its
 
 
 ### Commit
-Automatically create a _commit_ while initializing `.gitlet`, this _commit_ is shared by all repositories (same __UID__ and __timestamp__).
-When making new _commit_, start by copying the `HEAD` _branch_ and modifying it base on the `StagingArea`, the result will then be stored into `.gitlet` and the _branches_ shall be updated.
+Automatically create a `Initial Commit` object while initializing `.gitlet`, this `Commit` is shared by all repositories .
+When making new `Commit`, start with copying the `HEAD` _branch_ and modifying it based on what's in the `StagingArea`, then the _branches_ shall be updated.
 
 ## Persistence
-
+All objects, regardless of their type (commit, blob...), 
+are stored in `.gitlet/objects` in subdirectories named with the first two characters of their SHA-1 hash.

@@ -35,4 +35,6 @@ public class Repository {
     public static final File BRANCH_FOLDER = Utils.join(GITLET_SYSTEM, "refs");
     public static final File MASTER = Utils.join(BRANCH_FOLDER, "MASTER");
     public static final File HEAD = Utils.join(BRANCH_FOLDER, "HEAD");
+    /** StagingArea */
+
 }
