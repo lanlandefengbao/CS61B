@@ -22,19 +22,21 @@ public class Repository {
      * variable is used. We've provided two examples for you.
      */
 
-    /** The current working directory. */
-    public static final File CWD = new File(System.getProperty("user.dir"));
+    /** The root folder of current project */
+    public static final File PROJECT_FOLDER = new File(System.getProperty("user.dir"));
     /** The .gitlet directory. */
-    public static final File GITLET_SYSTEM = join(CWD, ".gitlet");
+    public static final File GITLET_SYSTEM = Utils.join(PROJECT_FOLDER, ".gitlet");
 
     /* TODO: fill in the rest of this class. */
-    /** Sotres historical commits */
-    public static final File COMMIT_FOLDER = Utils.join(GITLET_SYSTEM, "objects");
-    public static final File INITIAL_COMMIT = Utils.join(COMMIT_FOLDER, Utils.sha1(new Date(0).toString(), "initial commit"));
-    /** Stores branches */
+    /** Stores historical commits */
+    public static final File OBJECT_FOLDER = Utils.join(GITLET_SYSTEM, "objects");
+    /** If HEAD is pointing to a branch, the .git/HEAD file will contain a reference to that branch, like ".gitlet/refs/head/master"
+     * If in detached Head state (not on any branch, but on a specific commit), the .git/HEAD file will contain the commit hash directly. */
+    public static final File HEAD = Utils.join(OBJECT_FOLDER, "HEAD");
+    /** Stores pointers of different branches */
     public static final File BRANCH_FOLDER = Utils.join(GITLET_SYSTEM, "refs");
-    public static final File MASTER = Utils.join(BRANCH_FOLDER, "MASTER");
-    public static final File HEAD = Utils.join(BRANCH_FOLDER, "HEAD");
+    public static final File LOCAL_BRANCH = Utils.join(BRANCH_FOLDER, "heads");
+    public static final File MASTER = Utils.join(LOCAL_BRANCH, "MASTER");
     /** StagingArea */
-
+    public static final File STAGING_FILE = Utils.join(GITLET_SYSTEM, "index");
 }

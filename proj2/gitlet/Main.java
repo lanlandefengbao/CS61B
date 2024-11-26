@@ -10,8 +10,9 @@ import java.util.List;
 public class Main {
 
     /** Usage: java gitlet.Main ARGS, where ARGS contains
-     *  <COMMAND> <OPERAND1> <OPERAND2> ... 
+     *  <COMMAND> <OPERAND1> <OPERAND2> ...
      */
+    static final File CWD = new File(System.getProperty("user.dir"));
 
     public static void main(String[] args) {
         if(args.length == 0) {
@@ -22,24 +23,24 @@ public class Main {
 
         switch(firstArg) {
             case "init":
-                setupPersistence();
                 Commit c = new Commit();
-                c.makeCommit();
+                c.setupPersistence();
                 break;
             case "add":
-                // TODO: handle the `add [filename]` command
+                File f = new File(args[1]).getAbsoluteFile(); /** For file object that represents relative path, getAbsoluteFile will complete it based on CWD. */
+                if(f.exists() && f.isFile()) {
+                    new Watcher().addOne(f);
+                }
+                break;
+            case "commit":
+                if(args.length == 1) {
+                    System.out.println("Please enter a commit message.");
+                    System.exit(0);
+                }
+
                 break;
             // TODO: FILL THE REST IN
         }
     }
 
-    /** set up the directory for gitlet system. */
-    private static void setupPersistence() {
-        if(Repository.GITLET_SYSTEM.exists()) {
-            System.out.println("A Gitlet version-control system already exists in the current directory.");
-            System.exit(0);
-        }
-        Repository.COMMIT_FOLDER.mkdirs();
-        Repository.BRANCH_FOLDER.mkdirs();
-    }
 }
