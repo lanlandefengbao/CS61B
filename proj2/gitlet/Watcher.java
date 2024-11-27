@@ -37,7 +37,7 @@ public class Watcher {
 
     private final StagedFile staged;
     private final List<File> cwdFiles;
-    private final Map<File, String> commitedFile = Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, Utils.readContentsAsString(Repository.HEAD)), Commit.class).Blobs;
+    private final Map<File, String> commitedFile = Commit.getHeadCommit().Blobs;
 
     private final static File CWD = new File(System.getProperty("user.dir"));
 

@@ -8,16 +8,11 @@ import java.util.*;
  *  TODO: It's a good idea to give a description here of what else this Class
  *  does at a high level.
  *
- *  @author TODO
+ *  @author B Li
  */
 public class Commit implements Serializable {
-    /**
-     *
-     * List all instance variables of the Commit class here with a useful
-     * comment above them describing what that variable represents and how that
-     * variable is used. We've provided one example for `message`.
-     */
 
+    /** All instance variables of a Commit object */
     String timeStamp;
     String logMessage;
     Map<File, String> Blobs = new HashMap<>();
@@ -34,8 +29,6 @@ public class Commit implements Serializable {
 
     /** The message of this Commit. */
     private String message;
-
-    /* TODO: fill in the rest of this class. */
 
     /** Calculate SHA-1 for a normal Commit object. */
     public String hash() {
@@ -59,10 +52,19 @@ public class Commit implements Serializable {
         Utils.writeContents(Repository.HEAD, "ref: " + Repository.MASTER.getAbsolutePath());
     }
 
+    /** Get the current HEAD commit. */
+    static Commit getHeadCommit() {
+        String HEAD_FILE = Utils.readContentsAsString(Repository.HEAD);
+        if(HEAD_FILE.startsWith("ref: ")) {
+            HEAD_FILE = Utils.readContentsAsString(new File(HEAD_FILE.substring(5)));
+        }
+        return Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, HEAD_FILE.substring(0,2), HEAD_FILE.substring(2)), Commit.class);
+    }
+
     /** Make a normal commit (not for merge), meanwhile update the branches.
      * NOTE: Though commits made in detached state may not be accessed again if no branch was made for these commits, they still persist. */
     public void makeCommit(String logMessage) {
-        Commit curCommit = Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, Utils.readContentsAsString(Repository.HEAD)), Commit.class);
+        Commit curCommit = getHeadCommit();
 
         curCommit.logMessage = logMessage;
         curCommit.timeStamp = new Date().toString();
@@ -88,12 +90,8 @@ public class Commit implements Serializable {
     /** Print the commit history backwards along the HEAD commit.
      * If the HEAD commit is on a branch node (i.e. not in detached state), this command will print complete commit history of that branch. */
     public void log() {
-        String SHA1 = Utils.readContentsAsString(Repository.HEAD);
-        if(SHA1.startsWith("ref: ")) {
-            File HEAD_FILE = new File(Utils.readContentsAsString(new File(SHA1.substring(5))));
-            SHA1 = Utils.readContentsAsString(HEAD_FILE);
-        }
-        Commit cur = Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, SHA1.substring(0,2), SHA1), Commit.class);
+        Commit cur = getHeadCommit();
+        String SHA1 = Utils.sha1((Object) Utils.serialize(cur));
         while(cur != null) {
             System.out.println("===");
             System.out.println("commit " + SHA1);
@@ -102,11 +100,14 @@ public class Commit implements Serializable {
                 if(cur.Parent.size() > 1) {
                     System.out.println("Merge: " + SHA1.substring(0,7) + " " + cur.Parent.get(1).substring(0,7));
                 }
-                cur = Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, SHA1.substring(0,2), SHA1), Commit.class);
                 System.out.println("Date: " + cur.timeStamp);
                 System.out.println(cur.logMessage);
                 System.out.println("\n");
+                cur = Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, SHA1.substring(0,2), SHA1.substring(2)), Commit.class);
             } else {
+                System.out.println("Date: " + cur.timeStamp);
+                System.out.println(cur.logMessage);
+                System.out.println("\n");
                 cur = null;
             }
         }
@@ -165,7 +166,19 @@ public class Commit implements Serializable {
 
     /** Remove the branch with the given name (just the pointer, not all commits on it). */
     public void rmBranch(String Name) {
-
+        File BRANCH_FILE = Utils.join(Repository.LOCAL_BRANCH, Name);
+        if(!BRANCH_FILE.exists()) {
+            System.out.println("A branch with that name does not exist.");
+            System.exit(0);
+        }
+        if(Utils.readContentsAsString(Repository.HEAD).startsWith("ref: ")) {
+            File HEAD_FILE = new File(Utils.readContentsAsString(Repository.HEAD).substring(5));
+            if(HEAD_FILE.equals(BRANCH_FILE)) {
+                System.out.println("Cannot remove the current branch.");
+                System.exit(0);
+            }
+        }
+        BRANCH_FILE.delete();
     }
 }
 

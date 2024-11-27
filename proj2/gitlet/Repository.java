@@ -30,7 +30,8 @@ public class Repository {
     /* TODO: fill in the rest of this class. */
     /** Stores historical commits */
     public static final File OBJECT_FOLDER = Utils.join(GITLET_SYSTEM, "objects");
-    /** If HEAD is pointing to a branch, the .git/HEAD file will contain a reference to that branch, like ".gitlet/refs/head/master"
+    /** Stores the reference of the current HEAD commit.
+     * If HEAD is pointing to a branch, the .git/HEAD file will contain a reference to that branch, like ".gitlet/refs/head/master"
      * If in detached Head state (not on any branch, but on a specific commit), the .git/HEAD file will contain the commit hash directly. */
     public static final File HEAD = Utils.join(OBJECT_FOLDER, "HEAD");
     /** Stores pointers of different branches */
