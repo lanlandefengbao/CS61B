@@ -132,7 +132,22 @@ public class Watcher {
         getUntrackedFile();
         getChangedFile();
         System.out.println("=== Branches ===");
-        //TODO: print branches as required
+        if(Commit.isDetached()) {
+            String SHA1 = Utils.readContentsAsString(Repository.HEAD);
+            System.out.println("*" + "(HEAD detached at " + SHA1.substring(0,7) + ")");
+            for(File f : Repository.LOCAL_BRANCH.listFiles()) {
+                System.out.println(f.getName());
+            }
+        } else {
+            File HEAD = new File(Utils.readContentsAsString(Repository.HEAD).substring(5));
+            for(File f : Repository.LOCAL_BRANCH.listFiles()) {
+                if(f.equals(HEAD)) {
+                    System.out.println("*" + f.getName());
+                } else {
+                    System.out.println(f.getName());
+                }
+            }
+        }
         System.out.println("=== Staged Files ===");
         for(File f : staged.Addition.keySet()) {
             System.out.println(getRelativePath(f));

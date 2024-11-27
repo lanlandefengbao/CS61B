@@ -45,15 +45,15 @@ public class Commit implements Serializable {
         Repository.OBJECT_FOLDER.mkdirs();
         Repository.LOCAL_BRANCH.mkdirs();
         String SHA1 = Utils.sha1(new Date(0).toString(), "initial commit");
-        final File INITIAL_COMMIT = Utils.join(Repository.BRANCH_FOLDER, SHA1.substring(0,2), SHA1);
+        final File INITIAL_COMMIT = Utils.join(Repository.BRANCH_FOLDER, SHA1.substring(0,2), SHA1.substring(2));
         INITIAL_COMMIT.mkdirs();
         Utils.writeObject(INITIAL_COMMIT, this);
         Utils.writeContents(Repository.MASTER, hash());
         Utils.writeContents(Repository.HEAD, "ref: " + Repository.MASTER.getAbsolutePath());
     }
 
-    /** Get the current HEAD commit. */
-    static Commit getHeadCommit() {
+    /** Get the HEAD commit. */
+    public static Commit getHeadCommit() {
         String HEAD_FILE = Utils.readContentsAsString(Repository.HEAD);
         if(HEAD_FILE.startsWith("ref: ")) {
             HEAD_FILE = Utils.readContentsAsString(new File(HEAD_FILE.substring(5)));
@@ -61,14 +61,23 @@ public class Commit implements Serializable {
         return Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, HEAD_FILE.substring(0,2), HEAD_FILE.substring(2)), Commit.class);
     }
 
+    /** Detect detached state (if HEAD is not pointing to a branch). */
+    public static boolean isDetached() {
+        return !Utils.readContentsAsString(Repository.HEAD).startsWith("ref: ");
+    }
+
     /** Make a normal commit (not for merge), meanwhile update the branches.
      * NOTE: Though commits made in detached state may not be accessed again if no branch was made for these commits, they still persist. */
     public void makeCommit(String logMessage) {
-        Commit curCommit = getHeadCommit();
 
+        /** Clone the current HEAD commit to be the initial version of upcoming commit */
+        Commit curCommit = getHeadCommit();
+        String SHA1 = Utils.sha1((Object) Utils.serialize(curCommit));
+        /** Update the current commit */
         curCommit.logMessage = logMessage;
         curCommit.timeStamp = new Date().toString();
-        curCommit.Parent.addLast(Utils.readContentsAsString(Repository.HEAD));
+        curCommit.Parent.clear();
+        curCommit.Parent.add(SHA1);
 
         StagedFile staged = Utils.readObject(Repository.STAGING_FILE, StagedFile.class);
         if (staged.Addition.isEmpty() && staged.Removal.isEmpty()) {
@@ -83,7 +92,15 @@ public class Commit implements Serializable {
         }
         /** clear the StagingArea */
         Utils.writeContents(Repository.STAGING_FILE, "");
-        //TODO: save the commit object locally, and update the current branch or create a new branch, and update HEAD commit
+        /** Save the new commit object locally */
+        String newSHA1 = Utils.sha1((Object) Utils.serialize(curCommit));
+        Utils.writeObject(Utils.join(Repository.OBJECT_FOLDER, newSHA1.substring(0,2), newSHA1.substring(2)), curCommit);
+        /** Update Pointers of HEAD commit or Branch according to whether in detached state */
+        if(!isDetached()) {
+            Utils.writeContents(new File(Utils.readContentsAsString(Repository.HEAD).substring(5)), newSHA1);
+        } else {
+            Utils.writeContents(Repository.HEAD, newSHA1);
+        }
 
     }
 
@@ -171,14 +188,25 @@ public class Commit implements Serializable {
             System.out.println("A branch with that name does not exist.");
             System.exit(0);
         }
-        if(Utils.readContentsAsString(Repository.HEAD).startsWith("ref: ")) {
-            File HEAD_FILE = new File(Utils.readContentsAsString(Repository.HEAD).substring(5));
-            if(HEAD_FILE.equals(BRANCH_FILE)) {
+        if(!Commit.isDetached()) {
+            File HEAD = new File(Utils.readContentsAsString(Repository.HEAD).substring(5));
+            if(HEAD.equals(BRANCH_FILE)) {
                 System.out.println("Cannot remove the current branch.");
                 System.exit(0);
             }
         }
         BRANCH_FILE.delete();
+    }
+
+    /** Switch to a specific branch. */
+    public void checkoutBranch(String Name) {
+        if() {
+           System.out.println("No such branch exists.");
+           System.exit(0);
+        }
+        if() {
+            System.out.println("No need to checkout the current branch.");
+        }
     }
 }
 
