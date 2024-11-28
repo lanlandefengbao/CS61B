@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-/** The StagingArea should always be empty after commiting */
+/** The specific class of objects that represents the current state of StagingArea, which should always be empty after commiting */
 
 public class StagedFile implements Serializable {
     Map<File, String> Addition;

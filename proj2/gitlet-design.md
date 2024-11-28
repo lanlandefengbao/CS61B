@@ -74,13 +74,17 @@ Both `Commit` and `Blob`are stored in folders under `.gitlet/objects`,
 where the folders are named by the first two characters of their SHA-1 hash.
 `StagingArea` is the file `.gitlet/index`.
 
+Like in real Git, here we utilize the first two characters of a SHA-1 hash as a directory and the remaining characters as the file name.
+This approach functions similarly to a hashing mechanism, 
+which effectively narrows the search scope from all SHA-1 hashes in `.gitlet/objects` to those with a specific prefix, akin to the general principles of hashing
+
 ### Files in different states
 1. #### Untracked files
-   ##### Newly added files:
+   ##### Newly added files that waiting for confirmation:
    1. files in CWD that neither being staged for addition nor tracked in current commit.
    2. files staged for removal, but then re-created in CWD. The files could be _1_.the same as they were in current commit; or _2_.with different contents.
 2. #### Files Changed but not staged for commit
-   ##### Newly removed files or files with changed contents:
+   ##### Newly removed files or files with changed contents that waiting for confirmation:
    1. Files tracked in current commit, with content changed in CWD but not staged for addition;
    2. Files staged for addition, changed in CWD, but (this change) not staged. Including two cases:
    either _1._ files are tracked, and the updated contents are the same as the current commit version; 
@@ -89,7 +93,7 @@ where the folders are named by the first two characters of their SHA-1 hash.
    _1_. files tracked in current commit; _2_. files not tracked in current commit.
    4. Files tracked in current commit but not staged for addition, deleted in CWD, but not staged for removal.
 3. #### Staged files
-   ##### Files of state 1 and state 2, plus untouched files form current commit:
+   ##### The confirmed files from state 1 and 2, plus untouched files form current commit:
    1. The `add` command should enrich the `Addition` field with newly added files and files with updated contents, which could either from _1.1, 1.2.2, 2.1 or 2.2.2_.
    2. The `rm` command will enrich the `Removal` field with files newly confirmed to be removed, which is from _2.3.1, 2.4_
    3. Files may also be withdrawn from `Addition` or `Removal` when operating `add` / `rm`, which could either be the case of _1.2, 2.2.1 or 2.3_.

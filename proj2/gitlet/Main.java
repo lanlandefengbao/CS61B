@@ -37,7 +37,14 @@ public class Main {
                     System.out.println("Please enter a commit message.");
                     System.exit(0);
                 }
-
+            case "rm":
+            case "log":
+            case "global_log":
+            case "find":
+            case "status":
+            case "branch":
+            case "rm-branch":
+            case "checkout":
                 break;
             // TODO: FILL THE REST IN
         }

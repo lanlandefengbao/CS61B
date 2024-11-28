@@ -80,6 +80,7 @@ public class Commit implements Serializable {
         curCommit.Parent.add(SHA1);
 
         StagedFile staged = Utils.readObject(Repository.STAGING_FILE, StagedFile.class);
+        /** if no change compare with HEAD commit, abort */
         if (staged.Addition.isEmpty() && staged.Removal.isEmpty()) {
             System.out.println("No changes added to the commit.");
             System.exit(0);
@@ -198,15 +199,55 @@ public class Commit implements Serializable {
         BRANCH_FILE.delete();
     }
 
-    /** Switch to a specific branch. */
+    /** Switch to a specific branch, put all and only its files to working directory. */
     public void checkoutBranch(String Name) {
-        if() {
+        /** make sure that we won't lose any current changes */
+        Watcher w = new Watcher();
+        if(w.getUntrackedFile() || w.getChangedFile() || !w.isStagedEmpty()) {
+            System.out.println("There is an untracked file in the way; delete it or add and commit it first.");
+            System.exit(0);
+        }
+        /** make sure that the target branch exist and it's not the current branch */
+        File BRANCH_FILE = Utils.join(Repository.LOCAL_BRANCH, Name);
+        if(!BRANCH_FILE.exists()) {
            System.out.println("No such branch exists.");
            System.exit(0);
         }
-        if() {
+        if(!isDetached() && Utils.readContentsAsString(Repository.HEAD).substring(5).equals(BRANCH_FILE.getPath())) {
             System.out.println("No need to checkout the current branch.");
+            System.exit(0);
         }
+        /** update the HEAD file and the working directory*/
+        Utils.writeContents(Repository.HEAD, "ref: " + BRANCH_FILE.getAbsolutePath());
+        Commit cur = getHeadCommit();
+        for(File f : w.getCWDFiles()) {
+            if(cur.Blobs.containsKey(f)) {
+                String contentHash = cur.Blobs.get(f);
+                byte[] content = Utils.readContents(Utils.join(Repository.OBJECT_FOLDER, contentHash.substring(0,2), contentHash.substring(2)));
+                Utils.writeContents(f, (Object) content);
+            } else {
+                Utils.restrictedDelete(f);
+            }
+        }
+    }
+
+    /** Takes the version of the file as it exists in the head commit and puts it in the working directory.
+     * the input should be an absolute pathname, which is initially a relative pathname as a command line argument, see "add". */
+    public void checkoutFile(String PATHNAME) {
+        Commit cur = getHeadCommit();
+        File TARGET_FILE = new File(PATHNAME);
+        if(!cur.Blobs.containsKey(TARGET_FILE)) {
+            System.out.println("File does not exist in that commit.");
+            System.exit(0);
+        }
+        String contentHash = cur.Blobs.get(TARGET_FILE);
+        byte[] content = Utils.readContents(Utils.join(Repository.OBJECT_FOLDER, contentHash.substring(0,2), contentHash.substring(2)));
+        Utils.writeContents(TARGET_FILE, (Object) content);
+    }
+
+    /** Takes the version of the file as it exists in the commit with the given id, and puts it in the working directory */
+    public void checkoutCommitFile(String SHA1, String PATHNAME) {
+
     }
 }
 

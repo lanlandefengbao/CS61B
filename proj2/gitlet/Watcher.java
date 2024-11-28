@@ -4,7 +4,7 @@ import java.io.File;
 import java.util.*;
 
 
-/** When executing Gitlet commands, the underlying system should walk through the historical version of files and interact with files in CWD */
+/** The specific class of objects through which we can capture project files of different states, including "staged/removed", "untracked" and "changed but not staged", see DESIGN DOCUMENT for details. */
 
 public class Watcher {
     /**
@@ -49,8 +49,12 @@ public class Watcher {
     private List<File> getAbsolutePaths(File CURRENT_PATH, List<File> files) {
         if (CURRENT_PATH.isFile()) {
             files.add(CURRENT_PATH);
-        } else {
+        }
+        else {
             for (File f : CURRENT_PATH.listFiles()) {
+                if(f.getName().equals(".gitlet")) {
+                    continue;
+                }
                 getAbsolutePaths(f, files);
             }
         }
@@ -60,7 +64,7 @@ public class Watcher {
     /**
      * Tracing untracked files (untracked1, untracked2 of this object)
      */
-    public void getUntrackedFile() {
+    public Boolean getUntrackedFile() {
         for (File f : cwdFiles) {
             if (!staged.Addition.containsKey(f)) {
                 String contentHash = Utils.sha1((Object) Utils.readContents(f));
@@ -74,12 +78,13 @@ public class Watcher {
                 }
             }
         }
+        return !untracked1.isEmpty() && !untracked21.isEmpty() && !untracked22.isEmpty();
     }
 
     /**
      * Tracing changed but not staged files (changed1-4)
      */
-    public void getChangedFile() {
+    public Boolean getChangedFile() {
         for (File f : staged.Addition.keySet()) {
             if(commitedFile.containsKey(f)) {
                 if(!cwdFiles.contains(f)) {
@@ -117,7 +122,7 @@ public class Watcher {
                 }
             }
         }
-
+        return !changed1.isEmpty() && !changed21.isEmpty() && !changed22.isEmpty() && !changed31.isEmpty() && !changed32.isEmpty() && !changed4.isEmpty();
     }
 
     /** Take in an absolute path, returns the relative path based on CWD. */
@@ -191,7 +196,7 @@ public class Watcher {
     }
 
     /** Stage one file to StagingArea's Addition filed, and unstage it from the Removal field
-     * And we only pass in the file's relative path of CWD */
+     * And this method only takes in the file's ABSOLUTE path */
     public void addOne(File f) {
         if (!cwdFiles.contains(f)) {
             System.out.println("File does not exist.");
@@ -215,7 +220,7 @@ public class Watcher {
                 staged.Addition.replace(f, contentHash);
             }
         }
-        /** store current blob into .gitlet/objects folder */
+        /** store the staged file with new version of contents into .gitlet/objects folder, so we should have the right contents when commiting even though the file was deleted/modified in CWD. */
         Blob blob = new Blob(contentHash, Utils.readContents(f));
         File thisBlob = Utils.join(Repository.OBJECT_FOLDER, contentHash);
         if(!thisBlob.exists()) {
@@ -250,5 +255,12 @@ public class Watcher {
         Utils.writeObject(Repository.STAGING_FILE, staged);
     }
 
+    public List<File> getCWDFiles() {
+        return cwdFiles;
+    }
+
+    public boolean isStagedEmpty() {
+        return staged.Addition.isEmpty() && staged.Removal.isEmpty();
+    }
 }
 
