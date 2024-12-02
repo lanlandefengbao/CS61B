@@ -203,7 +203,7 @@ public class Watcher {
             System.exit(0);
         }
         String contentHash = Utils.sha1((Object) Utils.readContents(f));
-        /** newly add (including recreation) */
+        /** newly added (including recreation) & modified */
         if (!staged.Addition.containsKey(f)) {
             if (staged.Removal.contains(f)) {
                 staged.Removal.remove(f);
@@ -211,10 +211,15 @@ public class Watcher {
                     staged.Addition.put(f, contentHash);
                 }
             } else {
-                staged.Addition.put(f, contentHash);
+                if(!commitedFile.containsKey(f)) {
+                    staged.Addition.put(f, contentHash);
+                } else {
+                    if(!contentHash.equals(commitedFile.get(f))) {
+                        staged.Addition.put(f, contentHash);
+                    }
+                }
             }
         }
-        /** modification */
         else {
             if (!staged.Addition.get(f).equals(contentHash)) {
                 staged.Addition.replace(f, contentHash);

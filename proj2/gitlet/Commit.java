@@ -196,12 +196,20 @@ public class Commit implements Serializable {
                 System.exit(0);
             }
         }
-        BRANCH_FILE.delete();
+        Utils.restrictedDelete(BRANCH_FILE);
     }
 
-    /** Switch to a specific branch, put all and only its files to working directory. */
+    /** Checkouts for Gitlet.
+     * 1. checkoutBranch: switch to a specific branch, put all and only its files to working directory.
+     * 2. checkoutFile: takes the version of the file as it exists in the head commit and puts it in the working directory.
+     * 3. checkoutCommitFile: takes the version of the file as it exists in the commit with the given id, and puts it in the working directory.
+     * NOTE: Not like real Git, we don't have the "checkout -- [commit id]" command, which means we can't switch HEAD to an arbitrary commit other than a branch.
+     * Thus, there's no "detached state" in Gitlet.
+     *
+     * The following implementation of checkouts has been taken "detached state" into account, which can be simplified. */
+
     public void checkoutBranch(String Name) {
-        /** make sure that we won't lose any current changes */
+        /** make sure that we won't lose any uncommited changes due to this switch operation. */
         Watcher w = new Watcher();
         if(w.getUntrackedFile() || w.getChangedFile() || !w.isStagedEmpty()) {
             System.out.println("There is an untracked file in the way; delete it or add and commit it first.");
@@ -217,22 +225,12 @@ public class Commit implements Serializable {
             System.out.println("No need to checkout the current branch.");
             System.exit(0);
         }
-        /** update the HEAD file and the working directory*/
+        /** update the HEAD file and the working directory */
         Utils.writeContents(Repository.HEAD, "ref: " + BRANCH_FILE.getAbsolutePath());
-        Commit cur = getHeadCommit();
-        for(File f : w.getCWDFiles()) {
-            if(cur.Blobs.containsKey(f)) {
-                String contentHash = cur.Blobs.get(f);
-                byte[] content = Utils.readContents(Utils.join(Repository.OBJECT_FOLDER, contentHash.substring(0,2), contentHash.substring(2)));
-                Utils.writeContents(f, (Object) content);
-            } else {
-                Utils.restrictedDelete(f);
-            }
-        }
+        updateCWDFiles(w);
     }
 
-    /** Takes the version of the file as it exists in the head commit and puts it in the working directory.
-     * the input should be an absolute pathname, which is initially a relative pathname as a command line argument, see "add". */
+    /** The input should be an absolute pathname, which is initially a relative pathname as a command line argument, see "add". */
     public void checkoutFile(String PATHNAME) {
         Commit cur = getHeadCommit();
         File TARGET_FILE = new File(PATHNAME);
@@ -245,9 +243,58 @@ public class Commit implements Serializable {
         Utils.writeContents(TARGET_FILE, (Object) content);
     }
 
-    /** Takes the version of the file as it exists in the commit with the given id, and puts it in the working directory */
     public void checkoutCommitFile(String SHA1, String PATHNAME) {
+        File COMMIT_FILE = Utils.join(Repository.OBJECT_FOLDER, SHA1.substring(0,2), SHA1.substring(2));
+        if(!COMMIT_FILE.exists()) {
+            System.out.println("No commit with that id exists.");
+            System.exit(0);
+        }
+        File TARGET_FILE = new File(PATHNAME).getAbsoluteFile();
+        Commit TARGET_COMMIT = Utils.readObject(COMMIT_FILE, Commit.class);
+        if(!TARGET_COMMIT.Blobs.containsKey(TARGET_FILE)) {
+            System.out.println("File does not exist in that commit.");
+            System.exit(0);
+        }
+        String contentHash = TARGET_COMMIT.Blobs.get(TARGET_FILE);
+        byte[] content = Utils.readContents(Utils.join(Repository.OBJECT_FOLDER, contentHash.substring(0,2), contentHash.substring(2)));
+        Utils.writeContents(TARGET_FILE, (Object) content);
+    }
 
+    /** Update files in CWD as the result of switching between commits. */
+    private void updateCWDFiles(Watcher w) {
+        Commit cur = getHeadCommit();
+        for(File f : w.getCWDFiles()) {
+            if(cur.Blobs.containsKey(f)) {
+                String contentHash = cur.Blobs.get(f);
+                byte[] content = Utils.readContents(Utils.join(Repository.OBJECT_FOLDER, contentHash.substring(0,2), contentHash.substring(2)));
+                Utils.writeContents(f, (Object) content);
+            } else {
+                Utils.restrictedDelete(f);
+            }
+        }
+    }
+
+    /** Switch HEAD to a specific commit, put all and only its contents to CWD.
+     * Do so by moving the current branch head back to this commit to align with Gitlet's feature that HEAD must also be a branch, which implicitly moves the HEAD pointer. */
+    public void reset(String SHA1) {
+        /** make sure that we won't lose any uncommited changes due to this switch operation. */
+        Watcher w = new Watcher();
+        if(w.getUntrackedFile() || w.getChangedFile() || !w.isStagedEmpty()) {
+            System.out.println("There is an untracked file in the way; delete it or add and commit it first.");
+            System.exit(0);
+        }
+        /** make sure that the target commit exist */
+        File COMMIT_FILE = Utils.join(Repository.OBJECT_FOLDER, SHA1.substring(0,2), SHA1.substring(2));
+        if(!COMMIT_FILE.exists()) {
+            System.out.println("No commit with that id exists.");
+            System.exit(0);
+        }
+        /** update the current branch's SHA1, and update the working directory if necessary. */
+        String HEAD_SHA1 = Utils.readContentsAsString(Repository.HEAD).substring(5);
+        if(!HEAD_SHA1.equals(SHA1)) {
+            Utils.writeContents(new File(Utils.readContentsAsString(Repository.HEAD).substring(5)), SHA1);
+            updateCWDFiles(w);
+        }
     }
 }
 
