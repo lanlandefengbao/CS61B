@@ -10,30 +10,30 @@ public class Watcher {
     /**
      * files in CWD that neither _tracked_ in current commit nor staged for addition.
      */
-    private Map<File, String> untracked1;
+    private final Map<File, String> untracked1 = new HashMap<>();
     /**
      * files that have been staged for removal, but then re-created in CWD
      */
-    private Set<File> untracked21;
-    private Map<File, String> untracked22;
+    private final Set<File> untracked21 = new HashSet<>();
+    private final Map<File, String> untracked22 = new HashMap<>();
     /**
      * Files tracked in current commit, with content changed in CWD but not staged for addition;
      */
-    private Map<File, String> changed1;
+    private final Map<File, String> changed1 = new HashMap<>();
     /**
      * Files staged for addition, changed in CWD, but (this change) not staged.
      */
-    private Set<File> changed21;
-    private Map<File, String> changed22;
+    private final Set<File> changed21 = new HashSet<>();
+    private final Map<File, String> changed22 = new HashMap<>();
     /**
      * Files staged for addition, but deleted in the working directory.
      */
-    private Set<File> changed31;
-    private Set<File> changed32;
+    private final Set<File> changed31 = new HashSet<>();
+    private final Set<File> changed32 = new HashSet<>();
     /**
      * Files tracked in current commit, deleted in CWD, but not staged for removal.
      */
-    private Set<File> changed4;
+    private final Set<File> changed4 = new HashSet<>();
 
     private final StagedFile staged;
     private final List<File> cwdFiles;

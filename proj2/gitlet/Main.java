@@ -12,9 +12,11 @@ public class Main {
     /** Usage: java gitlet.Main ARGS, where ARGS contains
      *  <COMMAND> <OPERAND1> <OPERAND2> ...
      */
-    static final File CWD = new File(System.getProperty("user.dir"));
 
     public static void main(String[] args) {
+
+        final File CWD = new File(System.getProperty("user.dir"));
+
         if(args.length == 0) {
             System.out.println("Must have at least one argument");
             System.exit(0);
@@ -37,14 +39,8 @@ public class Main {
                     System.out.println("Please enter a commit message.");
                     System.exit(0);
                 }
-            case "rm":
-            case "log":
-            case "global_log":
-            case "find":
             case "status":
-            case "branch":
-            case "rm-branch":
-            case "checkout":
+                new Watcher().getStatus();
                 break;
             // TODO: FILL THE REST IN
         }

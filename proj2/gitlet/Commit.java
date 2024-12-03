@@ -18,13 +18,13 @@ public class Commit implements Serializable {
     Map<File, String> Blobs = new HashMap<>();
     List<String> Parent = new ArrayList<>();
 
-    /** Construct the initial commit object*/
+    /** Construct the initial commit object */
     public Commit() {
         logMessage = "initial commit";
         timeStamp = new Date(0).toString();
     }
 
-    /** Construct the commit object based on specific args*/
+    /** Construct the commit object based on specific args */
     public Commit(String logMessage, String timeStamp) {}
 
     /** The message of this Commit. */
@@ -45,11 +45,12 @@ public class Commit implements Serializable {
         Repository.OBJECT_FOLDER.mkdirs();
         Repository.LOCAL_BRANCH.mkdirs();
         String SHA1 = Utils.sha1(new Date(0).toString(), "initial commit");
-        final File INITIAL_COMMIT = Utils.join(Repository.BRANCH_FOLDER, SHA1.substring(0,2), SHA1.substring(2));
-        INITIAL_COMMIT.mkdirs();
-        Utils.writeObject(INITIAL_COMMIT, this);
-        Utils.writeContents(Repository.MASTER, hash());
+        final File INITIAL_COMMIT_FOLDER = Utils.join(Repository.OBJECT_FOLDER, SHA1.substring(0,2));
+        INITIAL_COMMIT_FOLDER.mkdirs();
+        Utils.writeObject(Utils.join(INITIAL_COMMIT_FOLDER, SHA1.substring(2)), this);
+        Utils.writeContents(Repository.MASTER, SHA1);
         Utils.writeContents(Repository.HEAD, "ref: " + Repository.MASTER.getAbsolutePath());
+        Utils.writeObject(Repository.STAGING_FILE, new StagedFile());
     }
 
     /** Get the HEAD commit. */
@@ -209,12 +210,9 @@ public class Commit implements Serializable {
      * The following implementation of checkouts has been taken "detached state" into account, which can be simplified. */
 
     public void checkoutBranch(String Name) {
-        /** make sure that we won't lose any uncommited changes due to this switch operation. */
         Watcher w = new Watcher();
-        if(w.getUntrackedFile() || w.getChangedFile() || !w.isStagedEmpty()) {
-            System.out.println("There is an untracked file in the way; delete it or add and commit it first.");
-            System.exit(0);
-        }
+        /** make sure that we won't lose any uncommited changes due to this switch operation. */
+        isChangeCleared(w);
         /** make sure that the target branch exist and it's not the current branch */
         File BRANCH_FILE = Utils.join(Repository.LOCAL_BRANCH, Name);
         if(!BRANCH_FILE.exists()) {
@@ -274,15 +272,21 @@ public class Commit implements Serializable {
         }
     }
 
+    /** Exam whether current uncommited changes exist.
+     * If so, abort the program. */
+     private void isChangeCleared(Watcher w) {
+         if(w.getUntrackedFile() || w.getChangedFile() || !w.isStagedEmpty()) {
+             System.out.println("There is an untracked file in the way; delete it or add and commit it first.");
+             System.exit(0);
+         }
+     }
+
     /** Switch HEAD to a specific commit, put all and only its contents to CWD.
      * Do so by moving the current branch head back to this commit to align with Gitlet's feature that HEAD must also be a branch, which implicitly moves the HEAD pointer. */
     public void reset(String SHA1) {
-        /** make sure that we won't lose any uncommited changes due to this switch operation. */
         Watcher w = new Watcher();
-        if(w.getUntrackedFile() || w.getChangedFile() || !w.isStagedEmpty()) {
-            System.out.println("There is an untracked file in the way; delete it or add and commit it first.");
-            System.exit(0);
-        }
+        /** make sure that we won't lose any uncommited changes due to this switch operation. */
+        isChangeCleared(w);
         /** make sure that the target commit exist */
         File COMMIT_FILE = Utils.join(Repository.OBJECT_FOLDER, SHA1.substring(0,2), SHA1.substring(2));
         if(!COMMIT_FILE.exists()) {
