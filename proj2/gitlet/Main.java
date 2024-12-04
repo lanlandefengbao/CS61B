@@ -63,6 +63,11 @@ public class Main {
             case "status":
                 new Watcher().getStatus();
                 break;
+            case "log":
+                new Commit().log();
+                break;
+            case "test":
+                System.out.println(Commit.getHeadCommit().hash());
             // TODO: FILL THE REST IN
         }
     }

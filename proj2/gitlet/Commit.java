@@ -24,8 +24,14 @@ public class Commit implements Serializable {
         timeStamp = new Date(0).toString();
     }
 
-    /** Construct the commit object based on specific args */
-    public Commit(String logMessage, String timeStamp) {}
+    /** Construct a normal commit object based on current commit */
+    public Commit(String Description) {
+        logMessage = Description;
+        timeStamp = new Date().toString();
+        Commit cur = getHeadCommit();
+        Parent.add(cur.hash());
+        Blobs = cur.Blobs;
+    }
 
     /** The message of this Commit. */
     private String message;
@@ -44,10 +50,14 @@ public class Commit implements Serializable {
         }
         Repository.OBJECT_FOLDER.mkdirs();
         Repository.LOCAL_BRANCH.mkdirs();
-        String SHA1 = Utils.sha1(new Date(0).toString(), "initial commit");
+        /** Create the initial commit */
+        Commit INITIAL_COMMIT = new Commit();
+        String SHA1 = INITIAL_COMMIT.hash();
+        /** Store the initial commit */
         final File INITIAL_COMMIT_FOLDER = Utils.join(Repository.OBJECT_FOLDER, SHA1.substring(0,2));
         INITIAL_COMMIT_FOLDER.mkdirs();
         Utils.writeObject(Utils.join(INITIAL_COMMIT_FOLDER, SHA1.substring(2)), this);
+        /** Set up the HEAD pointer */
         Utils.writeContents(Repository.MASTER, SHA1);
         Utils.writeContents(Repository.HEAD, "ref: " + Repository.MASTER.getAbsolutePath());
         Utils.writeObject(Repository.STAGING_FILE, new StagedFile());
@@ -55,11 +65,11 @@ public class Commit implements Serializable {
 
     /** Get the HEAD commit. */
     public static Commit getHeadCommit() {
-        String HEAD_FILE = Utils.readContentsAsString(Repository.HEAD);
-        if(HEAD_FILE.startsWith("ref: ")) {
-            HEAD_FILE = Utils.readContentsAsString(new File(HEAD_FILE.substring(5)));
+        String HEAD_SHA1 = Utils.readContentsAsString(Repository.HEAD);
+        if(HEAD_SHA1.startsWith("ref: ")) {
+            HEAD_SHA1 = Utils.readContentsAsString(new File(HEAD_SHA1.substring(5)));
         }
-        return Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, HEAD_FILE.substring(0,2), HEAD_FILE.substring(2)), Commit.class);
+        return Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, HEAD_SHA1.substring(0,2), HEAD_SHA1.substring(2)), Commit.class);
     }
 
     /** Detect detached state (if HEAD is not pointing to a branch). */
@@ -72,13 +82,7 @@ public class Commit implements Serializable {
     public void makeCommit(String logMessage) {
 
         /** Clone the current HEAD commit to be the initial version of upcoming commit */
-        Commit curCommit = getHeadCommit();
-        String SHA1 = Utils.sha1((Object) Utils.serialize(curCommit));
-        /** Update the current commit */
-        curCommit.logMessage = logMessage;
-        curCommit.timeStamp = new Date().toString();
-        curCommit.Parent.clear();
-        curCommit.Parent.add(SHA1);
+        Commit newCommit = new Commit(logMessage);
 
         StagedFile staged = Utils.readObject(Repository.STAGING_FILE, StagedFile.class);
         /** if no change compare with HEAD commit, abort */
@@ -87,20 +91,20 @@ public class Commit implements Serializable {
             System.exit(0);
         }
         for(File f : staged.Addition.keySet()) {
-            curCommit.Blobs.put(f, staged.Addition.get(f));
+            newCommit.Blobs.put(f, staged.Addition.get(f));
         }
         for(File f : staged.Removal) {
-            curCommit.Blobs.remove(f);
+            newCommit.Blobs.remove(f);
         }
         /** clear the StagingArea */
         staged.Addition.clear();
         staged.Removal.clear();
         Utils.writeObject(Repository.STAGING_FILE, staged);
         /** Save the new commit object locally */
-        String newSHA1 = Utils.sha1((Object) Utils.serialize(curCommit));
-        File newCommitFolder = Utils.join(Repository.OBJECT_FOLDER, newSHA1.substring(0,2));
-        newCommitFolder.mkdir();
-        Utils.writeObject(Utils.join(newCommitFolder, newSHA1.substring(2)), curCommit);
+        String newSHA1 = Utils.sha1((Object) Utils.serialize(newCommit));
+        File COMMIT_FOLDER = Utils.join(Repository.OBJECT_FOLDER, newSHA1.substring(0,2));
+        COMMIT_FOLDER.mkdir();
+        Utils.writeObject(Utils.join(COMMIT_FOLDER, newSHA1.substring(2)), newCommit);
         /** Update Pointers of HEAD commit or Branch according to whether in detached state */
         if(!isDetached()) {
             Utils.writeContents(new File(Utils.readContentsAsString(Repository.HEAD).substring(5)), newSHA1);
@@ -114,19 +118,20 @@ public class Commit implements Serializable {
      * If the HEAD commit is on a branch node (i.e. not in detached state), this command will print complete commit history of that branch. */
     public void log() {
         Commit cur = getHeadCommit();
-        String SHA1 = Utils.sha1((Object) Utils.serialize(cur));
+        String SHA1 = cur.hash();
         while(cur != null) {
             System.out.println("===");
             System.out.println("commit " + SHA1);
-            if(cur.Parent != null) {
-                SHA1 = cur.Parent.getFirst();
+            if(!cur.Parent.isEmpty()) {
                 if(cur.Parent.size() > 1) {
-                    System.out.println("Merge: " + SHA1.substring(0,7) + " " + cur.Parent.get(1).substring(0,7));
+                    System.out.println("Merge: " + cur.Parent.get(0).substring(0,7) + " " + cur.Parent.get(1).substring(0,7));
                 }
                 System.out.println("Date: " + cur.timeStamp);
                 System.out.println(cur.logMessage);
                 System.out.println("\n");
-                cur = Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, SHA1.substring(0,2), SHA1.substring(2)), Commit.class);
+                SHA1 = cur.Parent.get(0);
+                File COMMIT_FILE = Utils.join(Repository.OBJECT_FOLDER, SHA1.substring(0,2), SHA1.substring(2));
+                cur = Utils.readObject(COMMIT_FILE, Commit.class);
             } else {
                 System.out.println("Date: " + cur.timeStamp);
                 System.out.println(cur.logMessage);
