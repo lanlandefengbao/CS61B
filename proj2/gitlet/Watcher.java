@@ -4,7 +4,8 @@ import java.io.File;
 import java.util.*;
 
 
-/** The specific class of objects through which we can capture project files of different states, including "staged/removed", "untracked" and "changed but not staged", see DESIGN DOCUMENT for details. */
+/** The specific class of objects through which we can capture project files of different states, including "staged for addition/removal", "untracked" and "changed but not staged", see DESIGN DOCUMENT for details.
+ * For each state, we collect its files of all cases into one instance variable */
 
 public class Watcher {
     /**
@@ -68,13 +69,15 @@ public class Watcher {
         for (File f : cwdFiles) {
             if (!staged.Addition.containsKey(f)) {
                 String contentHash = Utils.sha1((Object) Utils.readContents(f));
-                if (!staged.Removal.contains(f)) {
+                if (!commitedFile.containsKey(f)) {
                     untracked1.put(f, contentHash);
                 }
-                if (contentHash.equals(staged.Addition.get(f))) {
-                    untracked21.add(f);
-                } else {
-                    untracked22.put(f, contentHash);
+                if(staged.Removal.contains(f)) {
+                    if (contentHash.equals(staged.Addition.get(f))) {
+                        untracked21.add(f);
+                    } else {
+                        untracked22.put(f, contentHash);
+                    }
                 }
             }
         }
@@ -90,21 +93,26 @@ public class Watcher {
                 if(!cwdFiles.contains(f)) {
                     changed31.add(f);
                 } else {
-                    String contentHash = Utils.sha1((Object) Utils.readContents(f));
-                    if(contentHash.equals(commitedFile.get(f))) {
-                        changed21.add(f);
-                    } else {
-                        changed22.put(f, contentHash);
+                    String contentHashCWD = Utils.sha1((Object) Utils.readContents(f));
+                    String contentHashStaged = staged.Addition.get(f);
+                    if(!contentHashCWD.equals(contentHashStaged)) {
+                        if(contentHashCWD.equals(commitedFile.get(f))) {
+                            changed21.add(f);
+                        } else {
+                            changed22.put(f, contentHashCWD);
+                        }
                     }
+
                 }
             }
             else {
                 if(!cwdFiles.contains(f)) {
                     changed32.add(f);
                 } else {
-                    String contentHash = Utils.sha1((Object) Utils.readContents(f));
-                    if(!contentHash.equals(commitedFile.get(f))) {
-                        changed22.put(f, contentHash);
+                    String contentHashCWD = Utils.sha1((Object) Utils.readContents(f));
+                    String contentHashStaged = staged.Addition.get(f);
+                    if(!contentHashStaged.equals(contentHashCWD)) {
+                        changed22.put(f, contentHashCWD);
                     }
                 }
             }
@@ -195,7 +203,7 @@ public class Watcher {
         }
     }
 
-    /** Stage one file to StagingArea's Addition filed, and unstage it from the Removal field
+    /** Stage one file to StagingArea's Addition filed
      * And this method only takes in the file's ABSOLUTE path */
     public void addOne(File f) {
         if (!cwdFiles.contains(f)) {
@@ -235,12 +243,8 @@ public class Watcher {
         Utils.writeObject(Repository.STAGING_FILE, staged);
     }
 
-    public void addAll() {
-
-    }
-
-    /** Unstage the file if it is currently staged for addition, also add it for removal if it is tracked (so the "status" won't get confused)
-     * And we only pass in the file's relative path of CWD */
+    /** Unstage one file if it is currently staged for addition, also add it for removal if it is tracked (so the "status" won't get confused)
+     * And this method only takes in the file's ABSOLUTE path */
     public void removeOne(File f) {
         if(staged.Addition.containsKey(f)) {
             staged.Addition.remove(f);
@@ -258,6 +262,44 @@ public class Watcher {
         }
 
         Utils.writeObject(Repository.STAGING_FILE, staged);
+    }
+
+    /** Update the stagingArea once for all */
+    public void updateAll() {
+        getUntrackedFile();
+        getChangedFile();
+        for(File f : untracked1.keySet()) {
+            staged.Addition.put(f, untracked1.get(f));
+        }
+        for(File f : untracked21) {
+            staged.Removal.remove(f);
+        }
+        for(File f : untracked22.keySet()) {
+            staged. Removal.remove(f);
+            staged.Addition.put(f, untracked22.get(f));
+        }
+        for(File f : changed1.keySet()) {
+            staged.Addition.put(f, changed1.get(f));
+        }
+        for(File f : changed21) {
+            staged.Addition.remove(f);
+        }
+        for(File f : changed22.keySet()) {
+            staged.Addition.put(f, changed22.get(f));
+        }
+        for(File f : changed31) {
+            staged.Addition.remove(f);
+            staged.Removal.add(f);
+        }
+        for(File f : changed32) {
+            staged.Addition.remove(f);
+        }
+        for(File f : changed4) {
+            staged.Removal.add(f);
+        }
+        /** update stagingArea locally */
+        Utils.writeObject(Repository.STAGING_FILE, staged);
+        /** clear */
     }
 
     public List<File> getCWDFiles() {

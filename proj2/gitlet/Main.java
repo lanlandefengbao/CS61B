@@ -29,16 +29,37 @@ public class Main {
                 c.setupPersistence();
                 break;
             case "add":
-                File f = new File(args[1]).getAbsoluteFile(); /** For file object that represents relative path, getAbsoluteFile will complete it based on CWD. */
-                if(f.exists() && f.isFile()) {
-                    new Watcher().addOne(f);
+                if(args.length != 2) {
+                    if(args.length == 1) {
+                        System.out.println("Please enter a file name.");
+                        System.exit(0);
+                    } else {
+                        System.out.println("Wrong number of arguments.");
+                        System.exit(0);
+                    }
+
+                }
+                if(args[1].equals(".")) {
+                    new Watcher().updateAll();
+                } else {
+                    File f = new File(args[1]).getAbsoluteFile(); /** For file object that represents relative path, getAbsoluteFile will complete it based on CWD. */
+                    if (f.exists() && f.isFile()) {
+                        new Watcher().addOne(f);
+                    }
                 }
                 break;
             case "commit":
-                if(args.length == 1) {
-                    System.out.println("Please enter a commit message.");
-                    System.exit(0);
+                if(args.length != 2) {
+                    if(args.length == 1) {
+                        System.out.println("Please enter a commit message.");
+                        System.exit(0);
+                    } else {
+                        System.out.println("Wrong number of arguments.");
+                        System.exit(0);
+                    }
                 }
+                new Commit().makeCommit(args[1]);
+                break;
             case "status":
                 new Watcher().getStatus();
                 break;

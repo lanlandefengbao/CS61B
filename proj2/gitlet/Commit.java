@@ -93,10 +93,14 @@ public class Commit implements Serializable {
             curCommit.Blobs.remove(f);
         }
         /** clear the StagingArea */
-        Utils.writeContents(Repository.STAGING_FILE, "");
+        staged.Addition.clear();
+        staged.Removal.clear();
+        Utils.writeObject(Repository.STAGING_FILE, staged);
         /** Save the new commit object locally */
         String newSHA1 = Utils.sha1((Object) Utils.serialize(curCommit));
-        Utils.writeObject(Utils.join(Repository.OBJECT_FOLDER, newSHA1.substring(0,2), newSHA1.substring(2)), curCommit);
+        File newCommitFolder = Utils.join(Repository.OBJECT_FOLDER, newSHA1.substring(0,2));
+        newCommitFolder.mkdir();
+        Utils.writeObject(Utils.join(newCommitFolder, newSHA1.substring(2)), curCommit);
         /** Update Pointers of HEAD commit or Branch according to whether in detached state */
         if(!isDetached()) {
             Utils.writeContents(new File(Utils.readContentsAsString(Repository.HEAD).substring(5)), newSHA1);
