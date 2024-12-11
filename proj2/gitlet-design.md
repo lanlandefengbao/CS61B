@@ -80,11 +80,11 @@ which effectively narrows the search scope from all SHA-1 hashes in `.gitlet/obj
 
 ### Files in different states
 1. #### Untracked files
-   ##### Newly added files that waiting for confirmation:
+   ##### Newly added files that waiting to be staged for addition:
    1. files in CWD that neither being staged for addition nor tracked in current commit.
    2. files staged for removal, but then re-created in CWD. The files could be _1_.the same as they were in current commit; or _2_.with different contents.
 2. #### Files Changed but not staged for commit
-   ##### Newly removed files or files with changed contents that waiting for confirmation:
+   ##### Newly removed files waiting to be staged for removal & Modified files waiting to be staged for addition:
    1. Files tracked in current commit, with content changed in CWD but not staged for addition;
    2. Files staged for addition, changed in CWD, but (this change) not staged. Including two cases:
    either _1._ files are tracked, and the updated contents are the same as the current commit version; 

@@ -4,7 +4,7 @@ import java.io.File;
 import java.util.*;
 
 
-/** The specific class of objects through which we can capture project files of different states, including "staged for addition/removal", "untracked" and "changed but not staged", see DESIGN DOCUMENT for details.
+/** The specific class of objects through which we can capture project files of different states in the current commit, including "staged for addition/removal", "untracked" and "changed but not staged", see DESIGN DOCUMENT for details.
  * For each state, we collect its files of all cases into one instance variable */
 
 public class Watcher {
@@ -211,7 +211,7 @@ public class Watcher {
             System.exit(0);
         }
         String contentHash = Utils.sha1((Object) Utils.readContents(f));
-        /** newly added (including recreation) & modified */
+//        /** newly added (including recreation) & modified */
         if (!staged.Addition.containsKey(f)) {
             if (staged.Removal.contains(f)) {
                 staged.Removal.remove(f);
@@ -233,7 +233,7 @@ public class Watcher {
                 staged.Addition.replace(f, contentHash);
             }
         }
-        /** store the staged file with new version of contents into .gitlet/objects folder, so we should have the right contents when commiting even though the file was deleted/modified in CWD. */
+//        /** store the staged file with new version of contents into .gitlet/objects folder, so we should have the right contents when commiting even though the file was deleted/modified in CWD. */
         Blob blob = new Blob(contentHash, Utils.readContents(f));
         File thisBlob = Utils.join(Repository.OBJECT_FOLDER, contentHash);
         if(!thisBlob.exists()) {
@@ -297,9 +297,9 @@ public class Watcher {
         for(File f : changed4) {
             staged.Removal.add(f);
         }
-        /** update stagingArea locally */
+//        /** update stagingArea locally */
         Utils.writeObject(Repository.STAGING_FILE, staged);
-        /** clear */
+//        /** clear */
     }
 
     public List<File> getCWDFiles() {
