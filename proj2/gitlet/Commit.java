@@ -25,8 +25,8 @@ public class Commit implements Serializable {
     }
 
     /** Construct a normal commit object based on current commit */
-    public Commit(String Description) {
-        logMessage = Description;
+    public Commit(String Message) {
+        logMessage = Message;
         timeStamp = new Date().toString();
         Commit cur = getHeadCommit();
         Parent.add(cur.hash());
@@ -77,15 +77,20 @@ public class Commit implements Serializable {
         return !Utils.readContentsAsString(Repository.HEAD).startsWith("ref: ");
     }
 
-    /** Make a normal commit (not for merge), meanwhile update the branches.
+    /** Make a normal/merged commit, meanwhile update the branches.
+     * The only thing different between a normal commit and a merged commit is that the latter has multiple parents.
+     * If the argument "GIVEN_COMMIT" IS NOT NULL, we need to add the second parent to the new commit (in Gitlet, we only have at most two parents for a commit).
      * NOTE: Though commits made in detached state may not be accessed again if no branch was made for these commits, they still persist. */
-    public void makeCommit(String logMessage) {
+    public void makeCommit(String logMessage, Commit GIVEN_COMMIT) {
 
-//        /** Clone the current HEAD commit to be the initial version of upcoming commit */
+        // Clone the current HEAD commit to be the initial version of upcoming commit
         Commit newCommit = new Commit(logMessage);
-
+        // If it's a merged commit, add the second parent (in Gitlet, we only have 2 parents for a merged commit)
+        if(GIVEN_COMMIT != null) {
+            newCommit.Parent.addLast(GIVEN_COMMIT.hash());
+        }
         StagedFile staged = Utils.readObject(Repository.STAGING_FILE, StagedFile.class);
-//        /** if no change compare with HEAD commit, abort */
+        // if no change compare with HEAD commit, abort
         if (staged.Addition.isEmpty() && staged.Removal.isEmpty()) {
             System.out.println("No changes added to the commit.");
             System.exit(0);
@@ -96,16 +101,16 @@ public class Commit implements Serializable {
         for(File f : staged.Removal) {
             newCommit.Blobs.remove(f);
         }
-//        /** clear the StagingArea */
+        // clear the StagingArea
         staged.Addition.clear();
         staged.Removal.clear();
         Utils.writeObject(Repository.STAGING_FILE, staged);
-//        /** Save the new commit object locally */
+        // Save the new commit object locally
         String newSHA1 = Utils.sha1((Object) Utils.serialize(newCommit));
         File COMMIT_FOLDER = Utils.join(Repository.OBJECT_FOLDER, newSHA1.substring(0,2));
         COMMIT_FOLDER.mkdir();
         Utils.writeObject(Utils.join(COMMIT_FOLDER, newSHA1.substring(2)), newCommit);
-//        /** Update Pointers of HEAD commit or Branch according to whether in detached state */
+        // Update Pointers of HEAD commit or Branch according to whether in detached state
         if(!isDetached()) {
             Utils.writeContents(new File(Utils.readContentsAsString(Repository.HEAD).substring(5)), newSHA1);
         } else {
@@ -352,9 +357,11 @@ public class Commit implements Serializable {
         }
         // Merge in various cases
         Commit sp = splitPoint(cur, target);
+        List<String> messageBox = new ArrayList<>(); // stores the messages that will be printed in terminal, for now we only have one potential message: "Encountered a merge conflict.\n"
         if(cur.hash().equals(sp.hash())) {
             checkoutBranch(branchName);
             System.out.println("Current branch fast-forwarded.");
+            System.exit(0);
         }
         if(target.hash().equals(sp.hash())) {
             System.out.println("Given branch is an ancestor of the current branch.");
@@ -369,6 +376,9 @@ public class Commit implements Serializable {
                         continue; //7
                     } else {
                         confilct(); //8.2
+                        if(messageBox.isEmpty()) {
+                            messageBox.add("Encountered a merge conflict.\n");
+                        }
                     }
                 }
                 else if(cur.Blobs.containsKey(f) && !target.Blobs.containsKey(f)) {
@@ -376,6 +386,9 @@ public class Commit implements Serializable {
                         w.removeOne(f); //6
                     } else {
                         confilct(); //8.2
+                        if(messageBox.isEmpty()) {
+                            messageBox.add("Encountered a merge conflict.\n");
+                        }
                     }
                 }
                 else {
@@ -392,27 +405,95 @@ public class Commit implements Serializable {
                         }
                         else {
                             confilct(); //8.1
+                            if(messageBox.isEmpty()) {
+                                messageBox.add("Encountered a merge conflict.\n");
+                            }
                         }
                     }
                 }
             }
             for(File f : cur.Blobs.keySet()) {
-                if(!sp.Blobs.containsKey(f) && !target.Blobs.containsKey(f)) {
-                    continue; //4
+                if(!sp.Blobs.containsKey(f)) {
+                    if(!target.Blobs.containsKey(f)) {
+                        continue; //4
+                    } else {
+                        if(target.Blobs.get(f).equals(cur.Blobs.get(f))) {
+                            continue; //3
+                        } else {
+                            confilict(); //8.3
+                            if(messageBox.isEmpty()) {
+                                messageBox.add("Encountered a merge conflict.\n");
+                            }
+                        }
+                    }
                 }
             }
             for(File f : target.Blobs.keySet()) {
-                if(!sp.Blobs.containsKey(f) && !cur.Blobs.containsKey(f)) {
-                    checkoutCommitFile(target.hash(), f.getPath());
-                    w.addOne(f); //5
+                if(!sp.Blobs.containsKey(f)) {
+                    if(!cur.Blobs.containsKey(f)) {
+                        checkoutCommitFile(target.hash(), f.getPath());
+                        w.addOne(f); //5
+                    } else {
+                        if(cur.Blobs.get(f).equals(target.Blobs.get(f))) {
+                            continue; //3
+                        } else {
+                            confilct(); //8.3
+                            if(messageBox.isEmpty()) {
+                                messageBox.add("Encountered a merge conflict.\n");
+                            }
+                        }
+                    }
                 }
             }
         }
-        makeCommit("Merged " + branchName + " into " + Utils.readContentsAsString(Repository.HEAD).substring(5) + ".");
-
+        makeCommit("Merged " + branchName + " into " + Utils.readContentsAsString(Repository.HEAD).substring(5) + ".\n", target);
+        if(!messageBox.isEmpty()) {
+            System.out.println(messageBox.get(0));
+        }
     }
 
     /** Find the split point of current branch and given branch. (Graph traverse) */
+    private Commit splitPoint(Commit current, Commit target) {
+        CommitTree currentTree = new CommitTree(current);
+        CommitTree targetTree = new CommitTree(target);
+        HashMap<String, Integer> currentDistance = currentTree.getDistanceTable();
+        HashMap<String, Integer> targetDistance = targetTree.getDistanceTable();
+        Commit res = null;
+        int minDistance = Integer.MAX_VALUE;
+        for(String SHA1 : currentDistance.keySet()) {
+            if(targetDistance.containsKey(SHA1)) {
+                int minDistanceNew = Math.min(currentDistance.get(SHA1), minDistance);
+                if(minDistanceNew != minDistance) {
+                    res = Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, SHA1.substring(0,2), SHA1.substring(2)), Commit.class);
+                    minDistance = minDistanceNew;
+                }
+            }
+        }
+        return res;
+    }
 
+    /** Generate the conflicted file and put it in CWD */
+    private void conflict(Commit CURRENT_COMMIT, Commit TARGET_COMMIT, File f, Watcher w) {
+        // Get the specified file from the target commit
+        byte[] contentCurrent;
+        if(CURRENT_COMMIT.Blobs.get(f) == null) {
+            contentCurrent = new byte[]{};
+        } else {
+            contentCurrent = Utils.readContents(Utils.join(Repository.OBJECT_FOLDER,CURRENT_COMMIT.Blobs.get(f).substring(0,2), CURRENT_COMMIT.Blobs.get(f).substring(2)));
+        }
+        // Get the specified file from the target commit
+        byte[] contentTarget;
+        if(TARGET_COMMIT.Blobs.get(f) == null) {
+            contentTarget = new byte[]{};
+        } else {
+            contentTarget = Utils.readContents(Utils.join(Repository.OBJECT_FOLDER,TARGET_COMMIT.Blobs.get(f).substring(0,2), TARGET_COMMIT.Blobs.get(f).substring(2)));
+        }
+        // Generate the conflicted file
+        String header = "<<<<<<< HEAD\n";
+        String splitter = "=======\n";
+        String footer = ">>>>>>>\n";
+        Utils.writeContents(f, header, contentCurrent, splitter, contentTarget, footer);
+        w.addOne(f);
+    }
 }
 

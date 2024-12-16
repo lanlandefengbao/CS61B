@@ -58,7 +58,7 @@ public class Main {
                         System.exit(0);
                     }
                 }
-                new Commit().makeCommit(args[1]);
+                new Commit().makeCommit(args[1], null);
                 break;
             case "status":
                 new Watcher().getStatus();
