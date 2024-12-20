@@ -211,7 +211,8 @@ public class Watcher {
             System.out.println("File does not exist.");
             System.exit(0);
         }
-        String contentHash = Utils.sha1((Object) Utils.readContents(f));
+        byte[] content = Utils.readContents(f);
+        String contentHash = Utils.sha1((Object) content);
 //        update the stagingArea
         if (!staged.Addition.containsKey(f)) {
             if (staged.Removal.contains(f)) {
@@ -239,7 +240,7 @@ public class Watcher {
         }
 
 //        store the staged file with new version of contents into .gitlet/objects folder, so we should have the right contents when commiting even though the file was deleted/modified in CWD. */
-        Blob blob = new Blob(contentHash, Utils.readContents(f));
+        Blob blob = new Blob(content);
         File thisBlobFolder = Utils.join(Repository.OBJECT_FOLDER, contentHash.substring(0,2));
         File thisBlob = Utils.join(thisBlobFolder, contentHash.substring(2));
         if (!thisBlob.exists()) {
@@ -316,7 +317,7 @@ public class Watcher {
             File BLOB_FOLDER = Utils.join(Repository.OBJECT_FOLDER, contentHash.substring(0,2));
             if(!BLOB_FOLDER.exists()) {
                 BLOB_FOLDER.mkdirs();
-                Blob blob = new Blob(contentHash, Utils.readContents(f));
+                Blob blob = new Blob(Utils.readContents(f));
                 Utils.writeObject(Utils.join(BLOB_FOLDER, contentHash.substring(2)), blob);
             }
             else {
@@ -324,7 +325,7 @@ public class Watcher {
                     if(fileName.equals(contentHash.substring(2))) {
                         break;
                     }
-                    Blob blob = new Blob(contentHash, Utils.readContents(f));
+                    Blob blob = new Blob(Utils.readContents(f));
                     Utils.writeObject(Utils.join(BLOB_FOLDER, contentHash.substring(2)), blob);
                 }
             }

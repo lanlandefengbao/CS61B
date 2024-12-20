@@ -4,16 +4,14 @@ import java.io.File;
 import java.io.Serializable;
 import java.util.*;
 
-/** A Blob object contains SHA1 and byte[], which are different forms of the same content.
-  For any commited file, we represent it by Map<filaname, Blob.UID>. */
+/** A Blob object contains byte[], which represents a file's content.
+  For any commited file, we represent it by Map<filaname, Blob's file name which is SHA1>. */
 
 public class Blob implements Serializable, Dumpable {
 
-    private String UID;
     private byte[] Content;
 
-    public Blob(String SHA1, byte[] CONTENT) {
-        UID = SHA1;
+    public Blob(byte[] CONTENT) {
         Content = CONTENT;
     }
 
@@ -23,6 +21,6 @@ public class Blob implements Serializable, Dumpable {
 
     @Override
     public void dump() {
-        System.out.printf("UID: %s%nContent: %s%n", UID, Arrays.toString(Content));
+        System.out.printf("Content: %s%n", Arrays.toString(Content));
     }
 }

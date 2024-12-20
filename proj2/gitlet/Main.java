@@ -164,6 +164,8 @@ public class Main {
                 break;
             case "tinytest": // For testing purposes. write a Blob object to a file named "tinytest", and see whether it can be read back correctly.
                 Utils.writeObject(Utils.join(Repository.PROJECT_FOLDER, "tinytest"),new Blob());
+                byte[] content = Utils.readContents(Utils.join(Repository.PROJECT_FOLDER, "tinytest"));
+                System.out.println(Utils.sha1((Object) content)); // the blob's sha1 hash once the "tinytest" is written to the file.
                 break;
         }
     }
