@@ -68,7 +68,7 @@ public class Watcher {
     public Boolean getUntrackedFile() {
         for (File f : cwdFiles) {
             if (!staged.Addition.containsKey(f)) {
-                String contentHash = Utils.sha1((Object) Utils.readContents(f));
+                String contentHash = Utils.sha1((Object) Utils.readContents(f), f.getAbsolutePath());
                 if (!commitedFile.containsKey(f)) {
                     untracked1.put(f, contentHash);
                 }
@@ -81,7 +81,7 @@ public class Watcher {
                 }
             }
         }
-        return !untracked1.isEmpty() && !untracked21.isEmpty() && !untracked22.isEmpty();
+        return !untracked1.isEmpty() || !untracked21.isEmpty() || !untracked22.isEmpty();
     }
 
     /**
@@ -93,7 +93,7 @@ public class Watcher {
                 if(!cwdFiles.contains(f)) {
                     changed31.add(f);
                 } else {
-                    String contentHashCWD = Utils.sha1((Object) Utils.readContents(f));
+                    String contentHashCWD = Utils.sha1((Object) Utils.readContents(f), f.getAbsolutePath());
                     String contentHashStaged = staged.Addition.get(f);
                     if(!contentHashCWD.equals(contentHashStaged)) {
                         if(contentHashCWD.equals(commitedFile.get(f))) {
@@ -109,7 +109,7 @@ public class Watcher {
                 if(!cwdFiles.contains(f)) {
                     changed32.add(f);
                 } else {
-                    String contentHashCWD = Utils.sha1((Object) Utils.readContents(f));
+                    String contentHashCWD = Utils.sha1((Object) Utils.readContents(f), f.getAbsolutePath());
                     String contentHashStaged = staged.Addition.get(f);
                     if(!contentHashStaged.equals(contentHashCWD)) {
                         changed22.put(f, contentHashCWD);
@@ -124,20 +124,21 @@ public class Watcher {
                 }
             }
             else {
-                String contentHash = Utils.sha1((Object) Utils.readContents(f));
+                String contentHash = Utils.sha1((Object) Utils.readContents(f), f.getAbsolutePath());
                 if(!contentHash.equals(commitedFile.get(f)) && !staged.Addition.containsKey(f)) {
                     changed1.put(f, contentHash);
                 }
             }
         }
-        return !changed1.isEmpty() && !changed21.isEmpty() && !changed22.isEmpty() && !changed31.isEmpty() && !changed32.isEmpty() && !changed4.isEmpty();
+        return !changed1.isEmpty() || !changed21.isEmpty() || !changed22.isEmpty() || !changed31.isEmpty() || !changed32.isEmpty() || !changed4.isEmpty();
     }
 
     /** Take in an absolute path, returns the relative path based on CWD. */
     private String getRelativePath(File f) {
         String absolutePath = f.getAbsolutePath();
         String cwdPath = CWD.getAbsolutePath();
-        return absolutePath.substring(cwdPath.length() + 1);
+        String rawPath = absolutePath.substring(cwdPath.length() + 1);
+        return rawPath.replace(System.getProperty("file.separator"), "/");
     }
 
     /** Displays Branches(with current branch marked by *), Staged files, Removed files, Changes not staged, and Untracked files. */
@@ -203,47 +204,55 @@ public class Watcher {
         }
     }
 
-    /** Stage one file to StagingArea's Addition filed
+    /** Adding a file for addition. Not like real Git, where "add" also responsible for adding a file for removal.
      * And this method only takes in the file's ABSOLUTE path */
     public void addOne(File f) {
         if (!cwdFiles.contains(f)) {
             System.out.println("File does not exist.");
             System.exit(0);
         }
-        String contentHash = Utils.sha1((Object) Utils.readContents(f));
-//        /** newly added (including recreation) & modified */
+        String contentHash = Utils.sha1((Object) Utils.readContents(f), f.getAbsolutePath());
+//        update the stagingArea
         if (!staged.Addition.containsKey(f)) {
             if (staged.Removal.contains(f)) {
-                staged.Removal.remove(f);
+                staged.Removal.remove(f); //1.2
                 if (!contentHash.equals(commitedFile.get(f))) {
-                    staged.Addition.put(f, contentHash);
+                    staged.Addition.put(f, contentHash); //1.2.2
                 }
             } else {
-                if(!commitedFile.containsKey(f)) {
-                    staged.Addition.put(f, contentHash);
+                if (!commitedFile.containsKey(f)) {
+                    staged.Addition.put(f, contentHash); //1.1
                 } else {
-                    if(!contentHash.equals(commitedFile.get(f))) {
-                        staged.Addition.put(f, contentHash);
+                    if (!contentHash.equals(commitedFile.get(f))) {
+                        staged.Addition.put(f, contentHash); //2.1
                     }
                 }
             }
-        }
-        else {
+        } else {
             if (!staged.Addition.get(f).equals(contentHash)) {
-                staged.Addition.replace(f, contentHash);
+                if (commitedFile.containsKey(f) && commitedFile.get(f).equals(contentHash)) {
+                    staged.Addition.remove(f); //2.2.1
+                } else {
+                    staged.Addition.put(f, contentHash); //2.2.2
+                }
             }
         }
-//        /** store the staged file with new version of contents into .gitlet/objects folder, so we should have the right contents when commiting even though the file was deleted/modified in CWD. */
+
+//        store the staged file with new version of contents into .gitlet/objects folder, so we should have the right contents when commiting even though the file was deleted/modified in CWD. */
         Blob blob = new Blob(contentHash, Utils.readContents(f));
-        File thisBlob = Utils.join(Repository.OBJECT_FOLDER, contentHash);
-        if(!thisBlob.exists()) {
+        File thisBlobFolder = Utils.join(Repository.OBJECT_FOLDER, contentHash.substring(0,2));
+        File thisBlob = Utils.join(thisBlobFolder, contentHash.substring(2));
+        if (!thisBlob.exists()) {
+            thisBlobFolder.mkdir();
             Utils.writeObject(thisBlob, blob);
         }
-
+//        update the staging file locally
         Utils.writeObject(Repository.STAGING_FILE, staged);
+
     }
 
-    /** Unstage one file if it is currently staged for addition, also add it for removal if it is tracked (so the "status" won't get confused)
+    /** Adding a file for removal(the missing part of real Git's "add" function from our "addOne" method).
+     * Furthermore, it deletes the file from CWD if one haven't done so (so we can delete and stage a file for removal directly through Gitlet in one step).
      * And this method only takes in the file's ABSOLUTE path */
     public void removeOne(File f) {
         if(staged.Addition.containsKey(f)) {
@@ -275,7 +284,7 @@ public class Watcher {
             staged.Removal.remove(f);
         }
         for(File f : untracked22.keySet()) {
-            staged. Removal.remove(f);
+            staged.Removal.remove(f);
             staged.Addition.put(f, untracked22.get(f));
         }
         for(File f : changed1.keySet()) {
@@ -297,13 +306,35 @@ public class Watcher {
         for(File f : changed4) {
             staged.Removal.add(f);
         }
-//        /** update stagingArea locally */
+//      update stagingArea locally
         Utils.writeObject(Repository.STAGING_FILE, staged);
-//        /** clear */
+//      write NEW blob objects into .gitlet/objects folder
+        for(File f : staged.Addition.keySet()) {
+            String contentHash = staged.Addition.get(f);
+            File BLOB_FOLDER = Utils.join(Repository.OBJECT_FOLDER, contentHash.substring(0,2));
+            if(!BLOB_FOLDER.exists()) {
+                BLOB_FOLDER.mkdirs();
+                Blob blob = new Blob(contentHash, Utils.readContents(f));
+                Utils.writeObject(Utils.join(BLOB_FOLDER, contentHash.substring(2)), blob);
+            }
+            else {
+                for(String fileName : Utils.plainFilenamesIn(BLOB_FOLDER)) {
+                    if(fileName.equals(contentHash.substring(2))) {
+                        break;
+                    }
+                    Blob blob = new Blob(contentHash, Utils.readContents(f));
+                    Utils.writeObject(Utils.join(BLOB_FOLDER, contentHash.substring(2)), blob);
+                }
+            }
+        }
     }
 
     public List<File> getCWDFiles() {
         return cwdFiles;
+    }
+
+    StagedFile getStaged() {
+        return staged;
     }
 
     public boolean isStagedEmpty() {

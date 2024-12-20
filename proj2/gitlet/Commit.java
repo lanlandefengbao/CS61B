@@ -4,13 +4,16 @@ import java.io.File;
 import java.io.Serializable;
 import java.util.*;
 
-/** Represents a gitlet commit object.
- *  TODO: It's a good idea to give a description here of what else this Class
- *  does at a high level.
+/** Represents a gitlet commit object. Also, it contains all the commands that are commit-related.
  *
  *  @author B Li
  */
-public class Commit implements Serializable {
+public class Commit implements Serializable, Dumpable {
+
+    @Override
+    public void dump() {
+        System.out.printf("Time Stamp: %s%nLog Message: %s%nBlobs: %s%nParent: %s%n", timeStamp, logMessage, Blobs, Parent);
+    }
 
     /** All instance variables of a Commit object */
     String timeStamp;
@@ -70,6 +73,15 @@ public class Commit implements Serializable {
             HEAD_SHA1 = Utils.readContentsAsString(new File(HEAD_SHA1.substring(5)));
         }
         return Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, HEAD_SHA1.substring(0,2), HEAD_SHA1.substring(2)), Commit.class);
+    }
+
+    /** Get parents of the current commit. */
+    public Commit[] getParents() {
+        Commit[] res = new Commit[Parent.size()];
+        for(int i = 0; i < Parent.size(); i++) {
+            res[i] = Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, Parent.get(i).substring(0,2), Parent.get(i).substring(2)), Commit.class);
+        }
+        return res;
     }
 
     /** Detect detached state (if HEAD is not pointing to a branch). */
@@ -174,10 +186,13 @@ public class Commit implements Serializable {
         for(File f : Repository.OBJECT_FOLDER.listFiles()) {
             for(String fileName : Utils.plainFilenamesIn(f)) {
                 String SHA1 = f.getName() + fileName;
-                Commit cur = Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, f.getName(), fileName), Commit.class);
-                if(cur.logMessage.equals(logMessage)) {
-                    cnt += 1;
-                    System.out.println(SHA1);
+                // a file in .gitlet/object could either be a commit object or a blob object
+                Serializable cur = Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, f.getName(), fileName), Serializable.class);
+                if(cur instanceof Commit) {
+                    if(((Commit) cur).logMessage.equals(logMessage)) {
+                        cnt += 1;
+                        System.out.println(SHA1);
+                    }
                 }
             }
         }
@@ -255,8 +270,14 @@ public class Commit implements Serializable {
             System.exit(0);
         }
         String contentHash = cur.Blobs.get(TARGET_FILE);
-        byte[] content = Utils.readContents(Utils.join(Repository.OBJECT_FOLDER, contentHash.substring(0,2), contentHash.substring(2)));
+        File COMMIT_FILE = Utils.join(Repository.OBJECT_FOLDER, contentHash.substring(0, 2), contentHash.substring(2));
+        byte[] content = Utils.readContents(COMMIT_FILE);
         Utils.writeContents(TARGET_FILE, (Object) content);
+        // Unstage the file if it's staged
+        Watcher w = new Watcher();
+        w.getStaged().Addition.remove(TARGET_FILE);
+        w.getStaged().Removal.remove(TARGET_FILE);
+        Utils.writeObject(Repository.STAGING_FILE, w.getStaged());
     }
 
     public void checkoutCommitFile(String SHA1, String PATHNAME) {
@@ -274,6 +295,11 @@ public class Commit implements Serializable {
         String contentHash = TARGET_COMMIT.Blobs.get(TARGET_FILE);
         byte[] content = Utils.readContents(Utils.join(Repository.OBJECT_FOLDER, contentHash.substring(0,2), contentHash.substring(2)));
         Utils.writeContents(TARGET_FILE, (Object) content);
+        // Unstage the file if it's staged
+        Watcher w = new Watcher();
+        w.getStaged().Addition.remove(TARGET_FILE);
+        w.getStaged().Removal.remove(TARGET_FILE);
+        Utils.writeObject(Repository.STAGING_FILE, w.getStaged());
     }
 
     /** Update files in CWD as the result of switching between commits.
@@ -307,7 +333,7 @@ public class Commit implements Serializable {
          }
          if(w.getChangedFile()) {
              System.out.println("You have unstaged changes; undo or stage and commit it.");
-             System.out.println(0);
+             System.exit(0);
          }
          if(!w.isStagedEmpty()) {
              System.out.println("You have uncommitted changes.");
@@ -375,20 +401,14 @@ public class Commit implements Serializable {
                     if(target.Blobs.get(f).equals(sp.Blobs.get(f))) {
                         continue; //7
                     } else {
-                        confilct(); //8.2
-                        if(messageBox.isEmpty()) {
-                            messageBox.add("Encountered a merge conflict.\n");
-                        }
+                        conflict(cur, target, f, w, messageBox); //8.2
                     }
                 }
                 else if(cur.Blobs.containsKey(f) && !target.Blobs.containsKey(f)) {
                     if(cur.Blobs.get(f).equals(sp.Blobs.get(f))) {
                         w.removeOne(f); //6
                     } else {
-                        confilct(); //8.2
-                        if(messageBox.isEmpty()) {
-                            messageBox.add("Encountered a merge conflict.\n");
-                        }
+                        conflict(cur, target, f, w, messageBox); //8.2
                     }
                 }
                 else {
@@ -404,10 +424,7 @@ public class Commit implements Serializable {
                             continue; //2
                         }
                         else {
-                            confilct(); //8.1
-                            if(messageBox.isEmpty()) {
-                                messageBox.add("Encountered a merge conflict.\n");
-                            }
+                            conflict(cur, target, f, w, messageBox); //8.1
                         }
                     }
                 }
@@ -420,10 +437,7 @@ public class Commit implements Serializable {
                         if(target.Blobs.get(f).equals(cur.Blobs.get(f))) {
                             continue; //3
                         } else {
-                            confilict(); //8.3
-                            if(messageBox.isEmpty()) {
-                                messageBox.add("Encountered a merge conflict.\n");
-                            }
+                            conflict(cur, target, f, w, messageBox); //8.3
                         }
                     }
                 }
@@ -437,10 +451,7 @@ public class Commit implements Serializable {
                         if(cur.Blobs.get(f).equals(target.Blobs.get(f))) {
                             continue; //3
                         } else {
-                            confilct(); //8.3
-                            if(messageBox.isEmpty()) {
-                                messageBox.add("Encountered a merge conflict.\n");
-                            }
+                            conflict(cur, target, f, w, messageBox); //8.3
                         }
                     }
                 }
@@ -472,8 +483,8 @@ public class Commit implements Serializable {
         return res;
     }
 
-    /** Generate the conflicted file and put it in CWD */
-    private void conflict(Commit CURRENT_COMMIT, Commit TARGET_COMMIT, File f, Watcher w) {
+    /** Generate the conflicted file (without solving it) and put it in CWD */
+    private void conflict(Commit CURRENT_COMMIT, Commit TARGET_COMMIT, File f, Watcher w, List<String> messageBox) {
         // Get the specified file from the target commit
         byte[] contentCurrent;
         if(CURRENT_COMMIT.Blobs.get(f) == null) {
@@ -494,6 +505,11 @@ public class Commit implements Serializable {
         String footer = ">>>>>>>\n";
         Utils.writeContents(f, header, contentCurrent, splitter, contentTarget, footer);
         w.addOne(f);
+        // Enrich the messageBox
+        if(messageBox.isEmpty()) {
+            messageBox.add("Encountered a merge conflict.\n");
+        }
     }
+
 }
 

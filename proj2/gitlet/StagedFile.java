@@ -17,4 +17,6 @@ public class StagedFile implements Serializable {
         Addition = new HashMap<>();
         Removal = new HashSet<>();
     }
+
+    
 }
