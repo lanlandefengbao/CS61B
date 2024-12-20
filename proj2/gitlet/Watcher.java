@@ -68,7 +68,7 @@ public class Watcher {
     public Boolean getUntrackedFile() {
         for (File f : cwdFiles) {
             if (!staged.Addition.containsKey(f)) {
-                String contentHash = Utils.sha1((Object) Utils.readContents(f), f.getAbsolutePath());
+                String contentHash = Utils.sha1((Object) Utils.readContents(f));
                 if (!commitedFile.containsKey(f)) {
                     untracked1.put(f, contentHash);
                 }
@@ -93,7 +93,7 @@ public class Watcher {
                 if(!cwdFiles.contains(f)) {
                     changed31.add(f);
                 } else {
-                    String contentHashCWD = Utils.sha1((Object) Utils.readContents(f), f.getAbsolutePath());
+                    String contentHashCWD = Utils.sha1((Object) Utils.readContents(f));
                     String contentHashStaged = staged.Addition.get(f);
                     if(!contentHashCWD.equals(contentHashStaged)) {
                         if(contentHashCWD.equals(commitedFile.get(f))) {
@@ -109,7 +109,7 @@ public class Watcher {
                 if(!cwdFiles.contains(f)) {
                     changed32.add(f);
                 } else {
-                    String contentHashCWD = Utils.sha1((Object) Utils.readContents(f), f.getAbsolutePath());
+                    String contentHashCWD = Utils.sha1((Object) Utils.readContents(f));
                     String contentHashStaged = staged.Addition.get(f);
                     if(!contentHashStaged.equals(contentHashCWD)) {
                         changed22.put(f, contentHashCWD);
@@ -124,7 +124,7 @@ public class Watcher {
                 }
             }
             else {
-                String contentHash = Utils.sha1((Object) Utils.readContents(f), f.getAbsolutePath());
+                String contentHash = Utils.sha1((Object) Utils.readContents(f));
                 if(!contentHash.equals(commitedFile.get(f)) && !staged.Addition.containsKey(f)) {
                     changed1.put(f, contentHash);
                 }
@@ -211,7 +211,7 @@ public class Watcher {
             System.out.println("File does not exist.");
             System.exit(0);
         }
-        String contentHash = Utils.sha1((Object) Utils.readContents(f), f.getAbsolutePath());
+        String contentHash = Utils.sha1((Object) Utils.readContents(f));
 //        update the stagingArea
         if (!staged.Addition.containsKey(f)) {
             if (staged.Removal.contains(f)) {
@@ -260,11 +260,13 @@ public class Watcher {
             if(commitedFile.containsKey(f)) {
                 staged.Removal.add(f);
                 cwdFiles.remove(f);
+                Utils.restrictedDelete(f);
             }
         } else {
             if(commitedFile.containsKey(f)) {
                 staged.Removal.add(f);
                 cwdFiles.remove(f);
+                Utils.restrictedDelete(f);
             } else {
                 System.out.println("No reason to remove this file. ");
             }

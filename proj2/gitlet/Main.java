@@ -73,13 +73,6 @@ public class Main {
             case "log":
                 new Commit().log();
                 break;
-//            case "current": // return the current commit's hash, for debugging purpose
-//                System.out.println(Commit.getHeadCommit().hash());
-//                break;
-//            case "filepath": // return the absolute path of specific file, for debugging purpose
-//                File f = new File(args[1]).getAbsoluteFile();
-//                System.out.println(f);
-//                break;
             case "rm":
                 if(args.length == 1) {
                     System.out.println("Please enter a file name.");
@@ -168,6 +161,9 @@ public class Main {
                 } else {
                     new Commit().merge(args[1]);
                 }
+                break;
+            case "tinytest": // For testing purposes. write a Blob object to a file named "tinytest", and see whether it can be read back correctly.
+                Utils.writeObject(Utils.join(Repository.PROJECT_FOLDER, "tinytest"),new Blob());
                 break;
         }
     }

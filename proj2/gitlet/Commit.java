@@ -270,9 +270,9 @@ public class Commit implements Serializable, Dumpable {
             System.exit(0);
         }
         String contentHash = cur.Blobs.get(TARGET_FILE);
-        File COMMIT_FILE = Utils.join(Repository.OBJECT_FOLDER, contentHash.substring(0, 2), contentHash.substring(2));
-        byte[] content = Utils.readContents(COMMIT_FILE);
-        Utils.writeContents(TARGET_FILE, (Object) content);
+        File BLOB_FILE = Utils.join(Repository.OBJECT_FOLDER, contentHash.substring(0, 2), contentHash.substring(2));
+        Blob blob = Utils.readObject(BLOB_FILE, Blob.class);
+        Utils.writeObject(TARGET_FILE, blob);
         // Unstage the file if it's staged
         Watcher w = new Watcher();
         w.getStaged().Addition.remove(TARGET_FILE);
@@ -293,8 +293,8 @@ public class Commit implements Serializable, Dumpable {
             System.exit(0);
         }
         String contentHash = TARGET_COMMIT.Blobs.get(TARGET_FILE);
-        byte[] content = Utils.readContents(Utils.join(Repository.OBJECT_FOLDER, contentHash.substring(0,2), contentHash.substring(2)));
-        Utils.writeContents(TARGET_FILE, (Object) content);
+        Blob blob = Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, contentHash.substring(0,2), contentHash.substring(2)), Blob.class);
+        Utils.writeObject(TARGET_FILE, blob);
         // Unstage the file if it's staged
         Watcher w = new Watcher();
         w.getStaged().Addition.remove(TARGET_FILE);
@@ -308,17 +308,17 @@ public class Commit implements Serializable, Dumpable {
         for(File f : CHECKOUT_COMMIT.Blobs.keySet()) {
             if(CURRENT_COMMIT.Blobs.containsKey(f)) {
                 if(!CURRENT_COMMIT.Blobs.get(f).equals(CHECKOUT_COMMIT.Blobs.get(f))) {
-                    byte[] content = Utils.readContents(Utils.join(Repository.OBJECT_FOLDER, CHECKOUT_COMMIT.Blobs.get(f).substring(0,2), CHECKOUT_COMMIT.Blobs.get(f).substring(2)));
-                    Utils.writeContents(f, (Object) content);
+                    Blob blob = Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, CHECKOUT_COMMIT.Blobs.get(f).substring(0,2), CHECKOUT_COMMIT.Blobs.get(f).substring(2)), Blob.class);
+                    Utils.writeObject(f, blob);
                 }
             } else {
-                byte[] content = Utils.readContents(Utils.join(Repository.OBJECT_FOLDER, CHECKOUT_COMMIT.Blobs.get(f).substring(0,2), CHECKOUT_COMMIT.Blobs.get(f).substring(2)));
-                Utils.writeContents(f, (Object) content);
+                Blob blob = Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, CHECKOUT_COMMIT.Blobs.get(f).substring(0,2), CHECKOUT_COMMIT.Blobs.get(f).substring(2)), Blob.class);
+                Utils.writeObject(f, blob);
             }
         }
         for(File f : CURRENT_COMMIT.Blobs.keySet()) {
             if(!CHECKOUT_COMMIT.Blobs.containsKey(f)) {
-               Utils.restrictedDelete(f);
+                f.delete();
             }
         }
 

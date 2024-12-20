@@ -17,6 +17,9 @@ public class Blob implements Serializable, Dumpable {
         Content = CONTENT;
     }
 
+    public Blob() {
+    }
+
 
     @Override
     public void dump() {
