@@ -99,7 +99,7 @@ public class Commit implements Serializable, Dumpable {
         Commit newCommit = new Commit(logMessage);
         // If it's a merged commit, add the second parent (in Gitlet, we only have 2 parents for a merged commit)
         if(GIVEN_COMMIT != null) {
-            newCommit.Parent.addLast(GIVEN_COMMIT.hash());
+            newCommit.Parent.add(GIVEN_COMMIT.hash());
         }
         StagedFile staged = Utils.readObject(Repository.STAGING_FILE, StagedFile.class);
         // if no change compare with HEAD commit, abort
@@ -170,7 +170,7 @@ public class Commit implements Serializable, Dumpable {
                     System.out.println("===");
                     System.out.println("commit " + SHA1);
                     if(cur.Parent.size() > 1) {
-                        System.out.println("Merge: " + cur.Parent.getFirst().substring(0,7) + " " + cur.Parent.get(1).substring(0,7));
+                        System.out.println("Merge: " + cur.Parent.get(0).substring(0,7) + " " + cur.Parent.get(1).substring(0,7));
                     }
                     System.out.println("Date: " + cur.timeStamp);
                     System.out.println(cur.logMessage);
