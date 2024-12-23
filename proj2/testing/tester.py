@@ -1,4 +1,4 @@
-import sys, re
+import sys, re, os
 from subprocess import \
      check_output, PIPE, STDOUT, DEVNULL, CalledProcessError, TimeoutExpired
 from os.path import abspath, basename, dirname, exists, join, splitext
@@ -99,6 +99,7 @@ DEBUG_MSG = \
     If you would like to step into and debug the command, type 's'. Once you have done so, go back to IntelliJ and click the debug button.
     If you would like to move on to the next command, type 'n'."""
 
+
 def Usage():
     print(SHORT_USAGE, file=sys.stderr)
     sys.exit(1)
@@ -148,13 +149,20 @@ def doDelete(name, dir):
         remove(join(dir, name))
     except OSError:
         pass
-
+    
 def doCopy(dest, src, dir):
+    src_path = join(src_dir, src)
+    dest_path = join(dir, dest)
     try:
+       # print(f"Current working directory: {getcwd()}")  # Debugging statement
+       # print(f"Absolute path of src directory: {abspath(src_dir)}")  # Debugging statement
+       # print(f"Copying from {src_path} to {dest_path}")  # Debugging statement
+        if not exists(src_path):
+            raise ValueError(f"Source file {src_path} does not exist")
         doDelete(dest, dir)
-        copyfile(join(src_dir, src), join(dir, dest))
-    except OSError:
-        raise ValueError("file {} could not be copied to {}".format(src, dest))
+        copyfile(src_path, dest_path)
+    except OSError as e:
+        raise ValueError(f"file {src} could not be copied to {dest}: {e}")
 
 def doExecute(cmnd, dir, timeout, line_num):
     here = getcwd()

@@ -144,15 +144,13 @@ public class Commit implements Serializable, Dumpable {
                     System.out.println("Merge: " + cur.Parent.get(0).substring(0,7) + " " + cur.Parent.get(1).substring(0,7));
                 }
                 System.out.println("Date: " + cur.timeStamp);
-                System.out.println(cur.logMessage);
-                System.out.println("\n");
+                System.out.println(cur.logMessage + "\n");
                 SHA1 = cur.Parent.get(0);
                 File COMMIT_FILE = Utils.join(Repository.OBJECT_FOLDER, SHA1.substring(0,2), SHA1.substring(2));
                 cur = Utils.readObject(COMMIT_FILE, Commit.class);
             } else {
                 System.out.println("Date: " + cur.timeStamp);
-                System.out.println(cur.logMessage);
-                System.out.println("\n");
+                System.out.println(cur.logMessage + "\n");
                 cur = null;
             }
         }
@@ -280,7 +278,7 @@ public class Commit implements Serializable, Dumpable {
         String contentHash = cur.Blobs.get(TARGET_FILE);
         File BLOB_FILE = Utils.join(Repository.OBJECT_FOLDER, contentHash.substring(0, 2), contentHash.substring(2));
         Blob blob = Utils.readObject(BLOB_FILE, Blob.class);
-        Utils.writeObject(TARGET_FILE, blob);
+        Utils.writeContents(TARGET_FILE, (Object) blob.getContent());
         // Unstage the file if it's staged
         Watcher w = new Watcher();
         w.getStaged().Addition.remove(TARGET_FILE);
@@ -302,7 +300,7 @@ public class Commit implements Serializable, Dumpable {
         }
         String contentHash = TARGET_COMMIT.Blobs.get(TARGET_FILE);
         Blob blob = Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, contentHash.substring(0,2), contentHash.substring(2)), Blob.class);
-        Utils.writeObject(TARGET_FILE, blob);
+        Utils.writeContents(TARGET_FILE, (Object) blob.getContent());
         // Unstage the file if it's staged
         Watcher w = new Watcher();
         w.getStaged().Addition.remove(TARGET_FILE);

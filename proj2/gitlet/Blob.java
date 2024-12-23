@@ -18,6 +18,10 @@ public class Blob implements Serializable, Dumpable {
     public Blob() {
     }
 
+    public byte[] getContent() {
+        return Content;
+    }
+
     @Override
     public void dump() {
         System.out.printf("Content: %s%n", Arrays.toString(Content));
