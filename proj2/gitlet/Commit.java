@@ -216,7 +216,15 @@ public class Commit implements Serializable, Dumpable {
     /** Remove the branch with the given name (just the pointer, not all commits on it). */
     public void rmBranch(String Name) {
         File BRANCH_FILE = Utils.join(Repository.LOCAL_BRANCH, Name);
-        if(!BRANCH_FILE.exists()) {
+        List<String> branches = Utils.plainFilenamesIn(Repository.LOCAL_BRANCH);
+        boolean exist = false;
+        for(String b : branches) {
+            if(b.equals(Name)) {
+                exist = true;
+                break;
+            }
+        }
+        if(!exist) {
             System.out.println("A branch with that name does not exist.");
             System.exit(0);
         }
@@ -227,7 +235,7 @@ public class Commit implements Serializable, Dumpable {
                 System.exit(0);
             }
         }
-        Utils.restrictedDelete(BRANCH_FILE);
+        BRANCH_FILE.delete();
     }
 
     /** Checkouts for Gitlet.
@@ -374,7 +382,8 @@ public class Commit implements Serializable, Dumpable {
             System.out.println("A branch with that name does not exist.");
             System.exit(0);
         }
-        Commit target = Utils.readObject(BRANCH_FILE, Commit.class);
+        String COMMIT_ID = Utils.readContentsAsString(BRANCH_FILE);
+        Commit target = Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, COMMIT_ID.substring(0,2), COMMIT_ID.substring(2)), Commit.class);
         // make sure not to merge a branch with itself
         Commit cur = getHeadCommit();
         if(cur.hash().equals(target.hash())) {
@@ -457,7 +466,7 @@ public class Commit implements Serializable, Dumpable {
                 }
             }
         }
-        makeCommit("Merged " + branchName + " into " + Utils.readContentsAsString(Repository.HEAD).substring(5) + ".\n", target);
+        makeCommit("Merged " + branchName + " into " + Utils.readContentsAsString(Repository.HEAD).substring(5 + Repository.LOCAL_BRANCH.getAbsolutePath().length() + 1) + ".\n", target);
         if(!messageBox.isEmpty()) {
             System.out.println(messageBox.get(0));
         }
