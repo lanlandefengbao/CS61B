@@ -9,11 +9,13 @@ I definitions.inc
 <<<
 > log
 ===
-${COMMIT_HEAD}
+${HEADER}
+${DATE}
 added wug
 
 ===
-${COMMIT_HEAD}
+${HEADER}
+${DATE}
 initial commit
 
 <<<*

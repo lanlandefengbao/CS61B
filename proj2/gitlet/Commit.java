@@ -2,6 +2,10 @@ package gitlet;
 
 import java.io.File;
 import java.io.Serializable;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /** Represents a gitlet commit object. Also, it contains all the commands that are commit-related.
@@ -35,9 +39,6 @@ public class Commit implements Serializable, Dumpable {
         Parent.add(cur.hash());
         Blobs = cur.Blobs;
     }
-
-    /** The message of this Commit. */
-    private String message;
 
     /** Calculate SHA-1 for a normal Commit object. */
     public String hash() {
