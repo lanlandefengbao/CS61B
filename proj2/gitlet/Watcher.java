@@ -138,7 +138,7 @@ public class Watcher {
         String absolutePath = f.getAbsolutePath();
         String cwdPath = CWD.getAbsolutePath();
         String rawPath = absolutePath.substring(cwdPath.length() + 1);
-        return rawPath.replace(System.getProperty("file.separator"), "/");
+        return rawPath.replace(File.separator, "/");
     }
 
     /** Displays Branches(with current branch marked by *), Staged files, Removed files, Changes not staged, and Untracked files. */
