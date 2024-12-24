@@ -2,10 +2,8 @@ package gitlet;
 
 import java.io.File;
 import java.io.Serializable;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
+import java.text.SimpleDateFormat;
+import java.util.Locale;
 import java.util.*;
 
 /** Represents a gitlet commit object. Also, it contains all the commands that are commit-related.
@@ -22,19 +20,19 @@ public class Commit implements Serializable, Dumpable {
     /** All instance variables of a Commit object */
     String timeStamp;
     String logMessage;
-    Map<File, String> Blobs = new HashMap<>();
+    Map<File, String> Blobs = new HashMap<>(); // the String is the SHA1 of the blob object
     List<String> Parent = new ArrayList<>();
 
     /** Construct the initial commit object */
     public Commit() {
         logMessage = "initial commit";
-        timeStamp = new Date(0).toString();
+        timeStamp =  new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy Z", Locale.ENGLISH).format(new Date());
     }
 
     /** Construct a normal commit object based on current commit */
     public Commit(String Message) {
         logMessage = Message;
-        timeStamp = new Date().toString();
+        timeStamp = new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy Z", Locale.ENGLISH).format(new Date());
         Commit cur = getHeadCommit();
         Parent.add(cur.hash());
         Blobs = cur.Blobs;
@@ -310,17 +308,17 @@ public class Commit implements Serializable, Dumpable {
     }
 
     /** Update files in CWD as the result of switching between commits.
-     * Here we suppose CWDFiles are identical with the current commit's blobs. */
+     * Here we suppose CWDFiles' contents are identical with what's contained in the current commit's blobs. */
     private void updateCWDFiles(Commit CURRENT_COMMIT, Commit CHECKOUT_COMMIT) {
         for(File f : CHECKOUT_COMMIT.Blobs.keySet()) {
             if(CURRENT_COMMIT.Blobs.containsKey(f)) {
                 if(!CURRENT_COMMIT.Blobs.get(f).equals(CHECKOUT_COMMIT.Blobs.get(f))) {
                     Blob blob = Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, CHECKOUT_COMMIT.Blobs.get(f).substring(0,2), CHECKOUT_COMMIT.Blobs.get(f).substring(2)), Blob.class);
-                    Utils.writeObject(f, blob);
+                    Utils.writeObject(f, blob.getContent());
                 }
             } else {
                 Blob blob = Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, CHECKOUT_COMMIT.Blobs.get(f).substring(0,2), CHECKOUT_COMMIT.Blobs.get(f).substring(2)), Blob.class);
-                Utils.writeObject(f, blob);
+                Utils.writeObject(f, blob.getContent());
             }
         }
         for(File f : CURRENT_COMMIT.Blobs.keySet()) {

@@ -145,72 +145,95 @@ public class Watcher {
     public void getStatus() {
         getUntrackedFile();
         getChangedFile();
+        boolean t = true; //should we print an empty line at the end of the current section?
         System.out.println("=== Branches ===");
         if(Commit.isDetached()) {
             String SHA1 = Utils.readContentsAsString(Repository.HEAD);
             System.out.println("*" + "(HEAD detached at " + SHA1.substring(0,7) + ")");
             for(File f : Repository.LOCAL_BRANCH.listFiles()) {
-                System.out.println(f.getName());
+                System.out.println(f.getName() + "\n");
             }
         } else {
             File HEAD = new File(Utils.readContentsAsString(Repository.HEAD).substring(5));
             for(File f : Repository.LOCAL_BRANCH.listFiles()) {
                 if(f.equals(HEAD)) {
-                    System.out.println("*" + f.getName());
+                    System.out.println("*" + f.getName() + "\n");
                 } else {
-                    System.out.println(f.getName());
+                    System.out.println(f.getName() + "\n");
                 }
             }
         }
         System.out.println("=== Staged Files ===");
         for(File f : staged.Addition.keySet()) {
-            System.out.println(getRelativePath(f));
+            System.out.println(getRelativePath(f) + "\n");
+            t = false;
         }
-        System.out.println("\n");
+        if(t) {
+            System.out.println();
+        } else {
+            t = true;
+        }
         System.out.println("=== Removed Files ===");
         for(File f : staged.Removal) {
-            System.out.println(getRelativePath(f));
+            System.out.println(getRelativePath(f) + "\n");
+            t = false;
+        };
+        if(t) {
+            System.out.println();
+        } else {
+            t = true;
         }
-        System.out.println("\n");
         System.out.println("=== Modifications Not Staged For Commit ===");
         for(File f : changed1.keySet()) {
-            System.out.println(getRelativePath(f) + " (modified)");
+            System.out.println(getRelativePath(f) + " (modified)" + "\n");
+            t = false;
         }
         for(File f : changed21) {
-            System.out.println(getRelativePath(f) + " (modified)");
+            System.out.println(getRelativePath(f) + " (modified)" + "\n");
+            t = false;
         }
         for(File f : changed22.keySet()) {
-            System.out.println(getRelativePath(f) + " (modified)");
+            System.out.println(getRelativePath(f) + " (modified)" + "\n");
+            t = false;
         }
         for(File f : changed31) {
-            System.out.println(getRelativePath(f) + " (deleted)");
+            System.out.println(getRelativePath(f) + " (deleted)" + "\n");
+            t = false;
         }
         for(File f : changed32) {
-            System.out.println(getRelativePath(f) + " (deleted)");
+            System.out.println(getRelativePath(f) + " (deleted)" + "\n");
+            t = false;
         }
         for(File f : changed4) {
-            System.out.println(getRelativePath(f) + " (deleted)");
+            System.out.println(getRelativePath(f) + " (deleted)" + "\n");
+            t = false;
         }
-        System.out.println("\n");
+        if(t) {
+            System.out.println();
+        } else {
+            t = true;
+        }
         System.out.println("=== Untracked Files ===");
         for (File f : untracked1.keySet()) {
-            System.out.println(getRelativePath(f));
+            System.out.println(getRelativePath(f) + "\n");
+            t = false;
         }
         for (File f : untracked21) {
-            System.out.println(getRelativePath(f));
+            System.out.println(getRelativePath(f) + "\n");
+            t = false;
         }
         for (File f : untracked22.keySet()) {
-            System.out.println(getRelativePath(f));
+            System.out.println(getRelativePath(f) + "\n");
+            t = false;
+        }
+        if(t) {
+            System.out.println();
         }
     }
 
     /** Adding a file for addition. Not like real Git, where "add" also responsible for adding a file for removal.
      * And this method only takes in the file's ABSOLUTE path */
     public void addOne(File f) {
-        if (!cwdFiles.contains(f)) {
-            System.out.println("File does not exist.");
-            System.exit(0);
-        }
         byte[] content = Utils.readContents(f);
         String contentHash = Utils.sha1((Object) content);
 //        update the stagingArea

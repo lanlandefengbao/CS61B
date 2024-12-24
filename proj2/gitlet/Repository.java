@@ -34,7 +34,7 @@ public class Repository {
     /** Stores pointers of different branches */
     public static final File BRANCH_FOLDER = Utils.join(GITLET_SYSTEM, "refs");
     public static final File LOCAL_BRANCH = Utils.join(BRANCH_FOLDER, "heads");
-    public static final File MASTER = Utils.join(LOCAL_BRANCH, "MASTER");
+    public static final File MASTER = Utils.join(LOCAL_BRANCH, "master");
 
     /** StagingArea */
     public static final File STAGING_FILE = Utils.join(GITLET_SYSTEM, "index");
