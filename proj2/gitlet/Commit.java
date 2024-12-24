@@ -314,11 +314,11 @@ public class Commit implements Serializable, Dumpable {
             if(CURRENT_COMMIT.Blobs.containsKey(f)) {
                 if(!CURRENT_COMMIT.Blobs.get(f).equals(CHECKOUT_COMMIT.Blobs.get(f))) {
                     Blob blob = Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, CHECKOUT_COMMIT.Blobs.get(f).substring(0,2), CHECKOUT_COMMIT.Blobs.get(f).substring(2)), Blob.class);
-                    Utils.writeObject(f, blob.getContent());
+                    Utils.writeContents(f, (Object) blob.getContent());
                 }
             } else {
                 Blob blob = Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, CHECKOUT_COMMIT.Blobs.get(f).substring(0,2), CHECKOUT_COMMIT.Blobs.get(f).substring(2)), Blob.class);
-                Utils.writeObject(f, blob.getContent());
+                Utils.writeContents(f, (Object) blob.getContent());
             }
         }
         for(File f : CURRENT_COMMIT.Blobs.keySet()) {
