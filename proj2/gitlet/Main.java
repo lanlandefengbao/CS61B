@@ -17,19 +17,19 @@ public class Main {
 
         final File CWD = new File(System.getProperty("user.dir"));
 
-        if(args.length == 0) {
+        if (args.length == 0) {
             System.out.println("Please enter a command.");
             System.exit(0);
         }
         String firstArg = args[0];
 
-        switch(firstArg) {
+        switch (firstArg) {
             case "init":
                 Commit c = new Commit();
                 c.setupPersistence();
                 break;
             case "add":
-                if(args.length != 2) {
+                if (args.length != 2) {
                     if(args.length == 1) {
                         System.out.println("Please enter a file name.");
                         System.exit(0);
@@ -38,11 +38,11 @@ public class Main {
                         System.exit(0);
                     }
                 }
-                if(args[1].isEmpty()) {
+                if (args[1].isEmpty()) {
                     System.out.println("Please enter a file name.");
                     System.exit(0);
                 }
-                if(args[1].equals(".")) {
+                if (args[1].equals(".")) {
                     new Watcher().updateAll();
                 } else {
                     File f = new File(args[1]).getAbsoluteFile(); /** For file object that represents relative path, getAbsoluteFile will complete it based on CWD. */
@@ -55,8 +55,8 @@ public class Main {
                 }
                 break;
             case "commit":
-                if(args.length != 2) {
-                    if(args.length == 1) {
+                if (args.length != 2) {
+                    if (args.length == 1) {
                         System.out.println("Please enter a commit message.");
                         System.exit(0);
                     } else {
@@ -64,14 +64,14 @@ public class Main {
                         System.exit(0);
                     }
                 }
-                if(args[1].isEmpty()) {
+                if (args[1].isEmpty()) {
                     System.out.println("Please enter a commit message.");
                     System.exit(0);
                 }
                 new Commit().makeCommit(args[1], null);
                 break;
             case "status":
-                if(args.length != 1) {
+                if (args.length != 1) {
                     System.out.println("Wrong number of arguments.");
                     System.exit(0);
                 }
@@ -81,7 +81,7 @@ public class Main {
                 new Commit().log();
                 break;
             case "rm":
-                if(args.length == 1 || (args.length == 2 && args[1].isEmpty())) {
+                if (args.length == 1 || (args.length == 2 && args[1].isEmpty())) {
                     System.out.println("Please enter a file name.");
                     System.exit(0);
                 } else if (args.length > 2) {
@@ -93,17 +93,17 @@ public class Main {
                 }
                 break;
             case "global-log":
-                if(args.length != 1) {
+                if (args.length != 1) {
                     System.out.println("Wrong number of arguments.");
                     System.exit(0);
                 }
                 new Commit().logGlobal();
                 break;
             case "find":
-                if(args.length == 1 || (args.length == 2 && args[1].isEmpty())) {
+                if (args.length == 1 || (args.length == 2 && args[1].isEmpty())) {
                     System.out.println("Please enter a commit message.");
                     System.exit(0);
-                } else if(args.length > 2) {
+                } else if (args.length > 2) {
                     System.out.println("Wrong number of arguments.");
                     System.exit(0);
                 } else {
@@ -111,19 +111,19 @@ public class Main {
                 }
                 break;
             case "checkout":
-                if(args.length == 1) {
+                if (args.length == 1) {
                     System.out.println("Please enter a command.");
                     System.exit(0);
-                } else if(args.length == 3) {
-                    if(!args[1].equals("--")) {
+                } else if (args.length == 3) {
+                    if (!args[1].equals("--")) {
                         System.out.println("Incorrect operands.");
                         System.exit(0);
                     }
                     new Commit().checkoutFile(new File(args[2]).getAbsolutePath());
-                } else if(args.length == 2) {
+                } else if (args.length == 2) {
                     new Commit().checkoutBranch(args[1]);
-                } else if(args.length == 4) {
-                    if(!args[2].equals("--")) {
+                } else if (args.length == 4) {
+                    if (!args[2].equals("--")) {
                         System.out.println("Incorrect operands.");
                         System.exit(0);
                     }
@@ -134,10 +134,10 @@ public class Main {
                 }
                 break;
             case "branch":
-                if(args.length == 1 || (args.length == 2 && args[1].isEmpty())) {
+                if (args.length == 1 || (args.length == 2 && args[1].isEmpty())) {
                     System.out.println("Please enter a branch name.");
                     System.exit(0);
-                } else if(args.length > 2) {
+                } else if (args.length > 2) {
                     System.out.println("Wrong number of arguments.");
                     System.exit(0);
                 } else {
@@ -145,10 +145,10 @@ public class Main {
                 }
                 break;
             case "rm-branch":
-                if(args.length == 1 || (args.length == 2 && args[1].isEmpty())) {
+                if (args.length == 1 || (args.length == 2 && args[1].isEmpty())) {
                     System.out.println("Please enter a branch name.");
                     System.exit(0);
-                } else if(args.length > 2) {
+                } else if (args.length > 2) {
                     System.out.println("Wrong number of arguments.");
                     System.exit(0);
                 } else {
@@ -156,10 +156,10 @@ public class Main {
                 }
                 break;
             case "reset":
-                if(args.length == 1 || (args.length == 2 && args[1].isEmpty())) {
+                if (args.length == 1 || (args.length == 2 && args[1].isEmpty())) {
                     System.out.println("Please enter a commit hash.");
                     System.exit(0);
-                } else if(args.length > 2) {
+                } else if (args.length > 2) {
                     System.out.println("Wrong number of arguments.");
                     System.exit(0);
                 } else {
@@ -167,10 +167,10 @@ public class Main {
                 }
                 break;
             case "merge":
-                if(args.length == 1 || (args.length == 2 && args[1].isEmpty())) {
+                if (args.length == 1 || (args.length == 2 && args[1].isEmpty())) {
                     System.out.println("Please enter a branch name.");
                     System.exit(0);
-                } else if(args.length > 2) {
+                } else if (args.length > 2) {
                     System.out.println("Wrong number of arguments.");
                     System.exit(0);
                 } else {

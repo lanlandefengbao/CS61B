@@ -72,7 +72,7 @@ public class Watcher {
                 if (!commitedFile.containsKey(f)) {
                     untracked1.put(f, contentHash);
                 }
-                if(staged.Removal.contains(f)) {
+                if (staged.Removal.contains(f)) {
                     if (contentHash.equals(staged.Addition.get(f))) {
                         untracked21.add(f);
                     } else {
@@ -89,14 +89,14 @@ public class Watcher {
      */
     public Boolean getChangedFile() {
         for (File f : staged.Addition.keySet()) {
-            if(commitedFile.containsKey(f)) {
-                if(!cwdFiles.contains(f)) {
+            if (commitedFile.containsKey(f)) {
+                if (!cwdFiles.contains(f)) {
                     changed31.add(f);
                 } else {
                     String contentHashCWD = Utils.sha1((Object) Utils.readContents(f));
                     String contentHashStaged = staged.Addition.get(f);
-                    if(!contentHashCWD.equals(contentHashStaged)) {
-                        if(contentHashCWD.equals(commitedFile.get(f))) {
+                    if (!contentHashCWD.equals(contentHashStaged)) {
+                        if (contentHashCWD.equals(commitedFile.get(f))) {
                             changed21.add(f);
                         } else {
                             changed22.put(f, contentHashCWD);
@@ -106,26 +106,26 @@ public class Watcher {
                 }
             }
             else {
-                if(!cwdFiles.contains(f)) {
+                if (!cwdFiles.contains(f)) {
                     changed32.add(f);
                 } else {
                     String contentHashCWD = Utils.sha1((Object) Utils.readContents(f));
                     String contentHashStaged = staged.Addition.get(f);
-                    if(!contentHashStaged.equals(contentHashCWD)) {
+                    if (!contentHashStaged.equals(contentHashCWD)) {
                         changed22.put(f, contentHashCWD);
                     }
                 }
             }
         }
-        for(File f : commitedFile.keySet()) {
-            if(!cwdFiles.contains(f)) {
-                if(!staged.Removal.contains(f)) {
+        for (File f : commitedFile.keySet()) {
+            if (!cwdFiles.contains(f)) {
+                if (!staged.Removal.contains(f)) {
                     changed4.add(f);
                 }
             }
             else {
                 String contentHash = Utils.sha1((Object) Utils.readContents(f));
-                if(!contentHash.equals(commitedFile.get(f)) && !staged.Addition.containsKey(f)) {
+                if (!contentHash.equals(commitedFile.get(f)) && !staged.Addition.containsKey(f)) {
                     changed1.put(f, contentHash);
                 }
             }
@@ -146,16 +146,16 @@ public class Watcher {
         getUntrackedFile();
         getChangedFile();
         System.out.println("=== Branches ===");
-        if(Commit.isDetached()) {
+        if (Commit.isDetached()) {
             String SHA1 = Utils.readContentsAsString(Repository.HEAD);
             System.out.println("*" + "(HEAD detached at " + SHA1.substring(0,7) + ")");
-            for(File f : Repository.LOCAL_BRANCH.listFiles()) {
+            for (File f : Repository.LOCAL_BRANCH.listFiles()) {
                 System.out.println(f.getName());
             }
         } else {
             File HEAD = new File(Utils.readContentsAsString(Repository.HEAD).substring(5));
-            for(File f : Repository.LOCAL_BRANCH.listFiles()) {
-                if(f.equals(HEAD)) {
+            for (File f : Repository.LOCAL_BRANCH.listFiles()) {
+                if (f.equals(HEAD)) {
                     System.out.println("*" + f.getName());
                 } else {
                     System.out.println(f.getName());
@@ -165,32 +165,32 @@ public class Watcher {
         System.out.println();
 
         System.out.println("=== Staged Files ===");
-        for(File f : staged.Addition.keySet()) {
+        for (File f : staged.Addition.keySet()) {
             System.out.println(getRelativePath(f));
         }
         System.out.println();
         System.out.println("=== Removed Files ===");
-        for(File f : staged.Removal) {
+        for (File f : staged.Removal) {
             System.out.println(getRelativePath(f));
         };
         System.out.println();
         System.out.println("=== Modifications Not Staged For Commit ===");
-        for(File f : changed1.keySet()) {
+        for (File f : changed1.keySet()) {
             System.out.println(getRelativePath(f) + " (modified)");
         }
-        for(File f : changed21) {
+        for (File f : changed21) {
             System.out.println(getRelativePath(f) + " (modified)");
         }
-        for(File f : changed22.keySet()) {
+        for (File f : changed22.keySet()) {
             System.out.println(getRelativePath(f) + " (modified)");
         }
-        for(File f : changed31) {
+        for (File f : changed31) {
             System.out.println(getRelativePath(f) + " (deleted)");
         }
-        for(File f : changed32) {
+        for (File f : changed32) {
             System.out.println(getRelativePath(f) + " (deleted)");
         }
-        for(File f : changed4) {
+        for (File f : changed4) {
             System.out.println(getRelativePath(f) + " (deleted)");
         }
         System.out.println();
@@ -255,15 +255,15 @@ public class Watcher {
      * Furthermore, it deletes the file from CWD if one haven't done so (so we can delete and stage a file for removal directly through Gitlet in one step).
      * And this method only takes in the file's ABSOLUTE path */
     public void removeOne(File f) {
-        if(staged.Addition.containsKey(f)) {
+        if (staged.Addition.containsKey(f)) {
             staged.Addition.remove(f);
-            if(commitedFile.containsKey(f)) {
+            if (commitedFile.containsKey(f)) {
                 staged.Removal.add(f);
                 cwdFiles.remove(f);
                 Utils.restrictedDelete(f);
             }
         } else {
-            if(commitedFile.containsKey(f)) {
+            if (commitedFile.containsKey(f)) {
                 staged.Removal.add(f);
                 cwdFiles.remove(f);
                 Utils.restrictedDelete(f);
@@ -279,49 +279,49 @@ public class Watcher {
     public void updateAll() {
         getUntrackedFile();
         getChangedFile();
-        for(File f : untracked1.keySet()) {
+        for (File f : untracked1.keySet()) {
             staged.Addition.put(f, untracked1.get(f));
         }
-        for(File f : untracked21) {
+        for (File f : untracked21) {
             staged.Removal.remove(f);
         }
-        for(File f : untracked22.keySet()) {
+        for (File f : untracked22.keySet()) {
             staged.Removal.remove(f);
             staged.Addition.put(f, untracked22.get(f));
         }
-        for(File f : changed1.keySet()) {
+        for (File f : changed1.keySet()) {
             staged.Addition.put(f, changed1.get(f));
         }
-        for(File f : changed21) {
+        for (File f : changed21) {
             staged.Addition.remove(f);
         }
-        for(File f : changed22.keySet()) {
+        for (File f : changed22.keySet()) {
             staged.Addition.put(f, changed22.get(f));
         }
-        for(File f : changed31) {
+        for (File f : changed31) {
             staged.Addition.remove(f);
             staged.Removal.add(f);
         }
-        for(File f : changed32) {
+        for (File f : changed32) {
             staged.Addition.remove(f);
         }
-        for(File f : changed4) {
+        for (File f : changed4) {
             staged.Removal.add(f);
         }
 //      update stagingArea locally
         Utils.writeObject(Repository.STAGING_FILE, staged);
 //      write NEW blob objects into .gitlet/objects folder
-        for(File f : staged.Addition.keySet()) {
+        for (File f : staged.Addition.keySet()) {
             String contentHash = staged.Addition.get(f);
             File BLOB_FOLDER = Utils.join(Repository.OBJECT_FOLDER, contentHash.substring(0,2));
-            if(!BLOB_FOLDER.exists()) {
+            if (!BLOB_FOLDER.exists()) {
                 BLOB_FOLDER.mkdirs();
                 Blob blob = new Blob(Utils.readContents(f));
                 Utils.writeObject(Utils.join(BLOB_FOLDER, contentHash.substring(2)), blob);
             }
             else {
-                for(String fileName : Utils.plainFilenamesIn(BLOB_FOLDER)) {
-                    if(fileName.equals(contentHash.substring(2))) {
+                for (String fileName : Utils.plainFilenamesIn(BLOB_FOLDER)) {
+                    if (fileName.equals(contentHash.substring(2))) {
                         break;
                     }
                     Blob blob = new Blob(Utils.readContents(f));
