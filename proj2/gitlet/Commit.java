@@ -67,8 +67,12 @@ public class Commit implements Serializable, Dumpable {
 
     /** Get the HEAD commit. */
     public static Commit getHeadCommit() {
+        if (!Repository.HEAD.exists()) {
+            System.out.println("Not in an initialized Gitlet directory.");
+            System.exit(0);
+        }
         String HEAD_SHA1 = Utils.readContentsAsString(Repository.HEAD);
-        if(HEAD_SHA1.startsWith("ref: ")) {
+        if (HEAD_SHA1.startsWith("ref: ")) {
             HEAD_SHA1 = Utils.readContentsAsString(new File(HEAD_SHA1.substring(5)));
         }
         return Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, HEAD_SHA1.substring(0,2), HEAD_SHA1.substring(2)), Commit.class);

@@ -18,7 +18,7 @@ public class Main {
         final File CWD = new File(System.getProperty("user.dir"));
 
         if(args.length == 0) {
-            System.out.println("Must have at least one argument");
+            System.out.println("Please enter a command.");
             System.exit(0);
         }
         String firstArg = args[0];
@@ -182,6 +182,9 @@ public class Main {
                 byte[] content = Utils.readContents(Utils.join(Repository.PROJECT_FOLDER, "tinytest"));
                 System.out.println(Utils.sha1((Object) content)); // the blob's sha1 hash once the "tinytest" is written to the file.
                 break;
+            default:
+                System.out.println("No command with that name exists.");
+                System.exit(0);
         }
     }
 
