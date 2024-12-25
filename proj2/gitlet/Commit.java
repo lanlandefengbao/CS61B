@@ -496,14 +496,16 @@ public class Commit implements Serializable, Dumpable {
         if(CURRENT_COMMIT.Blobs.get(f) == null) {
             contentCurrent = new byte[]{};
         } else {
-            contentCurrent = Utils.readContents(Utils.join(Repository.OBJECT_FOLDER,CURRENT_COMMIT.Blobs.get(f).substring(0,2), CURRENT_COMMIT.Blobs.get(f).substring(2)));
+            File BLOB_FILE = Utils.join(Repository.OBJECT_FOLDER,CURRENT_COMMIT.Blobs.get(f).substring(0,2), CURRENT_COMMIT.Blobs.get(f).substring(2));
+            contentCurrent = Utils.readObject(BLOB_FILE, Blob.class).getContent();
         }
         // Get the specified file from the target commit
         byte[] contentTarget;
         if(TARGET_COMMIT.Blobs.get(f) == null) {
             contentTarget = new byte[]{};
         } else {
-            contentTarget = Utils.readContents(Utils.join(Repository.OBJECT_FOLDER,TARGET_COMMIT.Blobs.get(f).substring(0,2), TARGET_COMMIT.Blobs.get(f).substring(2)));
+            File BLOB_FILE = Utils.join(Repository.OBJECT_FOLDER,TARGET_COMMIT.Blobs.get(f).substring(0,2), TARGET_COMMIT.Blobs.get(f).substring(2));
+            contentTarget = Utils.readObject(BLOB_FILE, Blob.class).getContent();
         }
         // Generate the conflicted file
         String header = "<<<<<<< HEAD\n";
