@@ -290,8 +290,8 @@ public class Commit implements Serializable, Dumpable {
     }
 
     public void checkoutCommitFile(String SHA1, String PATHNAME) {
-        File COMMIT_FILE = Utils.join(Repository.OBJECT_FOLDER, SHA1.substring(0,2), SHA1.substring(2));
-        if (!COMMIT_FILE.exists()) {
+        File COMMIT_FILE = getCommitFile(SHA1);
+        if (COMMIT_FILE == null) {
             System.out.println("No commit with that id exists.");
             System.exit(0);
         }
@@ -357,8 +357,8 @@ public class Commit implements Serializable, Dumpable {
 //        /** make sure that we won't lose any uncommited changes due to this switch operation. */
         isChangeCleared(w);
 //        /** make sure that the target commit exist */
-        File COMMIT_FILE = Utils.join(Repository.OBJECT_FOLDER, SHA1.substring(0,2), SHA1.substring(2));
-        if (!COMMIT_FILE.exists()) {
+        File COMMIT_FILE = getCommitFile(SHA1);
+        if (COMMIT_FILE == null) {
             System.out.println("No commit with that id exists.");
             System.exit(0);
         }
@@ -368,6 +368,30 @@ public class Commit implements Serializable, Dumpable {
         updateCWDFiles(cur, target);
         File CURRENT_BRANCH = new File(Utils.readContentsAsString(Repository.HEAD).substring(5));
         Utils.writeContents(CURRENT_BRANCH, SHA1);
+    }
+
+    /** Get the commit file based on given SHA1, abbreviated or not. */
+    private File getCommitFile(String SHA1) {
+        File COMMIT_FOLDER = Utils.join(Repository.OBJECT_FOLDER, SHA1.substring(0,2));
+        if (!COMMIT_FOLDER.exists()) {
+            return null;
+        }
+        if (SHA1.length() < 40) {
+            for (String fileName : Utils.plainFilenamesIn(COMMIT_FOLDER)) {
+                if (fileName.startsWith(SHA1.substring(2))) {
+                    return Utils.join(COMMIT_FOLDER, fileName);
+                }
+            }
+            return null;
+        }
+        else {
+            for (String fileName : Utils.plainFilenamesIn(COMMIT_FOLDER)) {
+                if (fileName.equals(SHA1.substring(2))) {
+                    return Utils.join(COMMIT_FOLDER, fileName);
+                }
+            }
+            return null;
+        }
     }
 
     /** Merge the given branch into the current branch
@@ -522,6 +546,5 @@ public class Commit implements Serializable, Dumpable {
             messageBox.add("Encountered a merge conflict.\n");
         }
     }
-
 }
 
