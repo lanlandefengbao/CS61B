@@ -41,10 +41,11 @@ public class Watcher {
     private final Map<File, String> commitedFile = Commit.getHeadCommit().Blobs;
 
     private final static File CWD = new File(System.getProperty("user.dir"));
+    private final static Repository repo = new Repository();
 
     public Watcher() {
-        staged = Utils.readObject(Repository.STAGING_FILE, StagedFile.class);
-        cwdFiles = getAbsolutePaths(Repository.PROJECT_FOLDER, new ArrayList<>());
+        staged = Utils.readObject(repo.STAGING_FILE, StagedFile.class);
+        cwdFiles = getAbsolutePaths(repo.PROJECT_FOLDER, new ArrayList<>());
     }
 
     private List<File> getAbsolutePaths(File CURRENT_PATH, List<File> files) {
@@ -147,14 +148,14 @@ public class Watcher {
         getChangedFile();
         System.out.println("=== Branches ===");
         if (Commit.isDetached()) {
-            String SHA1 = Utils.readContentsAsString(Repository.HEAD);
+            String SHA1 = Utils.readContentsAsString(repo.HEAD);
             System.out.println("*" + "(HEAD detached at " + SHA1.substring(0,7) + ")");
-            for (File f : Repository.LOCAL_BRANCH.listFiles()) {
+            for (File f : repo.LOCAL_BRANCH_FOLDER.listFiles()) {
                 System.out.println(f.getName());
             }
         } else {
-            File HEAD = new File(Utils.readContentsAsString(Repository.HEAD).substring(5));
-            for (File f : Repository.LOCAL_BRANCH.listFiles()) {
+            File HEAD = new File(Utils.readContentsAsString(repo.HEAD).substring(5));
+            for (File f : repo.LOCAL_BRANCH_FOLDER.listFiles()) {
                 if (f.equals(HEAD)) {
                     System.out.println("*" + f.getName());
                 } else {
@@ -240,14 +241,14 @@ public class Watcher {
 
 //        store the staged file with new version of contents into .gitlet/objects folder, so we should have the right contents when commiting even though the file was deleted/modified in CWD. */
         Blob blob = new Blob(content);
-        File thisBlobFolder = Utils.join(Repository.OBJECT_FOLDER, contentHash.substring(0,2));
+        File thisBlobFolder = Utils.join(repo.OBJECT_FOLDER, contentHash.substring(0,2));
         File thisBlob = Utils.join(thisBlobFolder, contentHash.substring(2));
         if (!thisBlob.exists()) {
             thisBlobFolder.mkdir();
             Utils.writeObject(thisBlob, blob);
         }
 //        update the staging file locally
-        Utils.writeObject(Repository.STAGING_FILE, staged);
+        Utils.writeObject(repo.STAGING_FILE, staged);
 
     }
 
@@ -272,7 +273,7 @@ public class Watcher {
             }
         }
 
-        Utils.writeObject(Repository.STAGING_FILE, staged);
+        Utils.writeObject(repo.STAGING_FILE, staged);
     }
 
     /** Update the stagingArea once for all */
@@ -309,11 +310,11 @@ public class Watcher {
             staged.Removal.add(f);
         }
 //      update stagingArea locally
-        Utils.writeObject(Repository.STAGING_FILE, staged);
+        Utils.writeObject(repo.STAGING_FILE, staged);
 //      write NEW blob objects into .gitlet/objects folder
         for (File f : staged.Addition.keySet()) {
             String contentHash = staged.Addition.get(f);
-            File BLOB_FOLDER = Utils.join(Repository.OBJECT_FOLDER, contentHash.substring(0,2));
+            File BLOB_FOLDER = Utils.join(repo.OBJECT_FOLDER, contentHash.substring(0,2));
             if (!BLOB_FOLDER.exists()) {
                 BLOB_FOLDER.mkdirs();
                 Blob blob = new Blob(Utils.readContents(f));

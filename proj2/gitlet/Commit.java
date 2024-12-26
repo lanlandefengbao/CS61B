@@ -23,6 +23,9 @@ public class Commit implements Serializable, Dumpable {
     Map<File, String> Blobs = new HashMap<>(); // the String is the SHA1 of the blob object
     List<String> Parent = new ArrayList<>();
 
+    /** Static variables */
+    static Repository repo = new Repository();
+
     /** Construct the initial commit object */
     public Commit() {
         logMessage = "initial commit";
@@ -44,52 +47,58 @@ public class Commit implements Serializable, Dumpable {
     }
 
 
-    /** Set up the initial gitlet system if we don't have one yet. */
-    public void setupPersistence() {
-        if (Repository.GITLET_SYSTEM.exists()) {
+    /** Set up the initial gitlet system under a given PROJECT_DIRECTORY if it doesn't have one yet. */
+    public void setupPersistence(File projectFolder) {
+        Repository repo;
+        if (projectFolder == null) {
+            repo = new Repository();
+        } else {
+            repo = new Repository(projectFolder);
+        }
+        if (repo.GITLET_SYSTEM.exists()) {
             System.out.println("A Gitlet version-control system already exists in the current directory.");
             System.exit(0);
         }
-        Repository.OBJECT_FOLDER.mkdirs();
-        Repository.LOCAL_BRANCH.mkdirs();
+        repo.OBJECT_FOLDER.mkdirs();
+        repo.LOCAL_BRANCH_FOLDER.mkdirs();
 //        Create the initial commit
         Commit INITIAL_COMMIT = new Commit();
         String SHA1 = INITIAL_COMMIT.hash();
 //        /** Store the initial commit */
-        final File INITIAL_COMMIT_FOLDER = Utils.join(Repository.OBJECT_FOLDER, SHA1.substring(0,2));
+        final File INITIAL_COMMIT_FOLDER = Utils.join(repo.OBJECT_FOLDER, SHA1.substring(0,2));
         INITIAL_COMMIT_FOLDER.mkdirs();
         Utils.writeObject(Utils.join(INITIAL_COMMIT_FOLDER, SHA1.substring(2)), this);
 //        /** Set up the HEAD pointer */
-        Utils.writeContents(Repository.MASTER, SHA1);
-        Utils.writeContents(Repository.HEAD, "ref: " + Repository.MASTER.getAbsolutePath());
-        Utils.writeObject(Repository.STAGING_FILE, new StagedFile());
+        Utils.writeContents(repo.MASTER, SHA1);
+        Utils.writeContents(repo.HEAD, "ref: " + repo.MASTER.getAbsolutePath());
+        Utils.writeObject(repo.STAGING_FILE, new StagedFile());
     }
 
     /** Get the HEAD commit. */
     public static Commit getHeadCommit() {
-        if (!Repository.HEAD.exists()) {
+        if (!repo.HEAD.exists()) {
             System.out.println("Not in an initialized Gitlet directory.");
             System.exit(0);
         }
-        String HEAD_SHA1 = Utils.readContentsAsString(Repository.HEAD);
+        String HEAD_SHA1 = Utils.readContentsAsString(repo.HEAD);
         if (HEAD_SHA1.startsWith("ref: ")) {
             HEAD_SHA1 = Utils.readContentsAsString(new File(HEAD_SHA1.substring(5)));
         }
-        return Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, HEAD_SHA1.substring(0,2), HEAD_SHA1.substring(2)), Commit.class);
+        return Utils.readObject(Utils.join(repo.OBJECT_FOLDER, HEAD_SHA1.substring(0,2), HEAD_SHA1.substring(2)), Commit.class);
     }
 
     /** Get parents of the current commit. */
     public Commit[] getParents() {
         Commit[] res = new Commit[Parent.size()];
         for (int i = 0; i < Parent.size(); i++) {
-            res[i] = Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, Parent.get(i).substring(0,2), Parent.get(i).substring(2)), Commit.class);
+            res[i] = Utils.readObject(Utils.join(repo.OBJECT_FOLDER, Parent.get(i).substring(0,2), Parent.get(i).substring(2)), Commit.class);
         }
         return res;
     }
 
     /** Detect detached state (if HEAD is not pointing to a branch). */
     public static boolean isDetached() {
-        return !Utils.readContentsAsString(Repository.HEAD).startsWith("ref: ");
+        return !Utils.readContentsAsString(repo.HEAD).startsWith("ref: ");
     }
 
     /** Make a normal/merged commit, meanwhile update the branches.
@@ -104,7 +113,7 @@ public class Commit implements Serializable, Dumpable {
         if (GIVEN_COMMIT != null) {
             newCommit.Parent.add(GIVEN_COMMIT.hash());
         }
-        StagedFile staged = Utils.readObject(Repository.STAGING_FILE, StagedFile.class);
+        StagedFile staged = Utils.readObject(repo.STAGING_FILE, StagedFile.class);
         // if no change compare with HEAD commit, abort
         if (staged.Addition.isEmpty() && staged.Removal.isEmpty()) {
             System.out.println("No changes added to the commit.");
@@ -119,17 +128,17 @@ public class Commit implements Serializable, Dumpable {
         // clear the StagingArea
         staged.Addition.clear();
         staged.Removal.clear();
-        Utils.writeObject(Repository.STAGING_FILE, staged);
+        Utils.writeObject(repo.STAGING_FILE, staged);
         // Save the new commit object locally
         String newSHA1 = Utils.sha1((Object) Utils.serialize(newCommit));
-        File COMMIT_FOLDER = Utils.join(Repository.OBJECT_FOLDER, newSHA1.substring(0,2));
+        File COMMIT_FOLDER = Utils.join(repo.OBJECT_FOLDER, newSHA1.substring(0,2));
         COMMIT_FOLDER.mkdir();
         Utils.writeObject(Utils.join(COMMIT_FOLDER, newSHA1.substring(2)), newCommit);
         // Update Pointers of HEAD commit or Branch according to whether in detached state
         if (!isDetached()) {
-            Utils.writeContents(new File(Utils.readContentsAsString(Repository.HEAD).substring(5)), newSHA1);
+            Utils.writeContents(new File(Utils.readContentsAsString(repo.HEAD).substring(5)), newSHA1);
         } else {
-            Utils.writeContents(Repository.HEAD, newSHA1);
+            Utils.writeContents(repo.HEAD, newSHA1);
         }
 
     }
@@ -149,7 +158,7 @@ public class Commit implements Serializable, Dumpable {
                 System.out.println("Date: " + cur.timeStamp);
                 System.out.println(cur.logMessage + "\n");
                 SHA1 = cur.Parent.get(0);
-                File COMMIT_FILE = Utils.join(Repository.OBJECT_FOLDER, SHA1.substring(0,2), SHA1.substring(2));
+                File COMMIT_FILE = Utils.join(repo.OBJECT_FOLDER, SHA1.substring(0,2), SHA1.substring(2));
                 cur = Utils.readObject(COMMIT_FILE, Commit.class);
             } else {
                 System.out.println("Date: " + cur.timeStamp);
@@ -161,10 +170,10 @@ public class Commit implements Serializable, Dumpable {
 
     /** Print information of all commits ever made, including commits on multiple branches and experimental commits (commits on unspecified branch), the order doesn't matter. */
     public void logGlobal() {
-        for (File f : Repository.OBJECT_FOLDER.listFiles()) {
+        for (File f : repo.OBJECT_FOLDER.listFiles()) {
             for (String fileName : Utils.plainFilenamesIn(f)) {
                 String SHA1 = f.getName() + fileName;
-                File commitFile = Utils.join(Repository.OBJECT_FOLDER.getPath(), f.getName(), fileName);
+                File commitFile = Utils.join(repo.OBJECT_FOLDER.getPath(), f.getName(), fileName);
                 Serializable obj = Utils.readObject(commitFile,Serializable.class);
                 if (obj instanceof Commit) {
                     Commit cur = (Commit) obj;
@@ -184,11 +193,11 @@ public class Commit implements Serializable, Dumpable {
     /** Print all commit ids that have the given log message */
     public void find(String logMessage) {
         int cnt = 0;
-        for (File f : Repository.OBJECT_FOLDER.listFiles()) {
+        for (File f : repo.OBJECT_FOLDER.listFiles()) {
             for (String fileName : Utils.plainFilenamesIn(f)) {
                 String SHA1 = f.getName() + fileName;
                 // a file in .gitlet/object could either be a commit object or a blob object
-                Serializable cur = Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, f.getName(), fileName), Serializable.class);
+                Serializable cur = Utils.readObject(Utils.join(repo.OBJECT_FOLDER, f.getName(), fileName), Serializable.class);
                 if (cur instanceof Commit) {
                     if (((Commit) cur).logMessage.equals(logMessage)) {
                         cnt += 1;
@@ -204,7 +213,7 @@ public class Commit implements Serializable, Dumpable {
 
     /** Create a new branch (a pointer) on HEAD commit, but not switch to it. */
     public void makeBranch(String Name) {
-        File newBranch = Utils.join(Repository.LOCAL_BRANCH, Name);
+        File newBranch = Utils.join(repo.LOCAL_BRANCH_FOLDER, Name);
         if (newBranch.exists()) {
             System.out.println("A branch with that name already exists.");
             System.exit(0);
@@ -216,8 +225,8 @@ public class Commit implements Serializable, Dumpable {
 
     /** Remove the branch with the given name (just the pointer, not all commits on it). */
     public void rmBranch(String Name) {
-        File BRANCH_FILE = Utils.join(Repository.LOCAL_BRANCH, Name);
-        List<String> branches = Utils.plainFilenamesIn(Repository.LOCAL_BRANCH);
+        File BRANCH_FILE = Utils.join(repo.LOCAL_BRANCH_FOLDER, Name);
+        List<String> branches = Utils.plainFilenamesIn(repo.LOCAL_BRANCH_FOLDER);
         boolean exist = false;
         for (String b : branches) {
             if(b.equals(Name)) {
@@ -230,7 +239,7 @@ public class Commit implements Serializable, Dumpable {
             System.exit(0);
         }
         if (!Commit.isDetached()) {
-            File HEAD = new File(Utils.readContentsAsString(Repository.HEAD).substring(5));
+            File HEAD = new File(Utils.readContentsAsString(repo.HEAD).substring(5));
             if (HEAD.equals(BRANCH_FILE)) {
                 System.out.println("Cannot remove the current branch.");
                 System.exit(0);
@@ -253,21 +262,21 @@ public class Commit implements Serializable, Dumpable {
 //        /** make sure that we won't lose any uncommited changes due to this switch operation. */
         isChangeCleared(w);
 //        /** make sure that the target branch exist and it's not the current branch */
-        File BRANCH_FILE = Utils.join(Repository.LOCAL_BRANCH, BRANCH_NAME);
+        File BRANCH_FILE = Utils.join(repo.LOCAL_BRANCH_FOLDER, BRANCH_NAME);
         if (!BRANCH_FILE.exists()) {
            System.out.println("No such branch exists.");
            System.exit(0);
         }
-        if (!isDetached() && Utils.readContentsAsString(Repository.HEAD).substring(5).equals(BRANCH_FILE.getPath())) {
+        if (!isDetached() && Utils.readContentsAsString(repo.HEAD).substring(5).equals(BRANCH_FILE.getPath())) {
             System.out.println("No need to checkout the current branch.");
             System.exit(0);
         }
 //        /** update the HEAD file and the working directory */
         Commit cur = getHeadCommit();
         String CHECKOUT_ID = Utils.readContentsAsString(BRANCH_FILE);
-        Commit CHECKOUT_COMMIT = Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, CHECKOUT_ID.substring(0,2), CHECKOUT_ID.substring(2)), Commit.class);
+        Commit CHECKOUT_COMMIT = Utils.readObject(Utils.join(repo.OBJECT_FOLDER, CHECKOUT_ID.substring(0,2), CHECKOUT_ID.substring(2)), Commit.class);
         updateCWDFiles(cur, CHECKOUT_COMMIT);
-        Utils.writeContents(Repository.HEAD, "ref: " + BRANCH_FILE.getAbsolutePath());
+        Utils.writeContents(repo.HEAD, "ref: " + BRANCH_FILE.getAbsolutePath());
     }
 
     /** The input should be an absolute pathname, which is initially a relative pathname as a command line argument, see "add". */
@@ -279,14 +288,14 @@ public class Commit implements Serializable, Dumpable {
             System.exit(0);
         }
         String contentHash = cur.Blobs.get(TARGET_FILE);
-        File BLOB_FILE = Utils.join(Repository.OBJECT_FOLDER, contentHash.substring(0, 2), contentHash.substring(2));
+        File BLOB_FILE = Utils.join(repo.OBJECT_FOLDER, contentHash.substring(0, 2), contentHash.substring(2));
         Blob blob = Utils.readObject(BLOB_FILE, Blob.class);
         Utils.writeContents(TARGET_FILE, (Object) blob.getContent());
         // Unstage the file if it's staged
         Watcher w = new Watcher();
         w.getStaged().Addition.remove(TARGET_FILE);
         w.getStaged().Removal.remove(TARGET_FILE);
-        Utils.writeObject(Repository.STAGING_FILE, w.getStaged());
+        Utils.writeObject(repo.STAGING_FILE, w.getStaged());
     }
 
     public void checkoutCommitFile(String SHA1, String PATHNAME) {
@@ -302,13 +311,13 @@ public class Commit implements Serializable, Dumpable {
             System.exit(0);
         }
         String contentHash = TARGET_COMMIT.Blobs.get(TARGET_FILE);
-        Blob blob = Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, contentHash.substring(0,2), contentHash.substring(2)), Blob.class);
+        Blob blob = Utils.readObject(Utils.join(repo.OBJECT_FOLDER, contentHash.substring(0,2), contentHash.substring(2)), Blob.class);
         Utils.writeContents(TARGET_FILE, (Object) blob.getContent());
         // Unstage the file if it's staged
         Watcher w = new Watcher();
         w.getStaged().Addition.remove(TARGET_FILE);
         w.getStaged().Removal.remove(TARGET_FILE);
-        Utils.writeObject(Repository.STAGING_FILE, w.getStaged());
+        Utils.writeObject(repo.STAGING_FILE, w.getStaged());
     }
 
     /** Update files in CWD as the result of switching between commits.
@@ -317,11 +326,11 @@ public class Commit implements Serializable, Dumpable {
         for (File f : CHECKOUT_COMMIT.Blobs.keySet()) {
             if(CURRENT_COMMIT.Blobs.containsKey(f)) {
                 if(!CURRENT_COMMIT.Blobs.get(f).equals(CHECKOUT_COMMIT.Blobs.get(f))) {
-                    Blob blob = Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, CHECKOUT_COMMIT.Blobs.get(f).substring(0,2), CHECKOUT_COMMIT.Blobs.get(f).substring(2)), Blob.class);
+                    Blob blob = Utils.readObject(Utils.join(repo.OBJECT_FOLDER, CHECKOUT_COMMIT.Blobs.get(f).substring(0,2), CHECKOUT_COMMIT.Blobs.get(f).substring(2)), Blob.class);
                     Utils.writeContents(f, (Object) blob.getContent());
                 }
             } else {
-                Blob blob = Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, CHECKOUT_COMMIT.Blobs.get(f).substring(0,2), CHECKOUT_COMMIT.Blobs.get(f).substring(2)), Blob.class);
+                Blob blob = Utils.readObject(Utils.join(repo.OBJECT_FOLDER, CHECKOUT_COMMIT.Blobs.get(f).substring(0,2), CHECKOUT_COMMIT.Blobs.get(f).substring(2)), Blob.class);
                 Utils.writeContents(f, (Object) blob.getContent());
             }
         }
@@ -366,13 +375,13 @@ public class Commit implements Serializable, Dumpable {
         Commit cur = getHeadCommit();
         Commit target = Utils.readObject(COMMIT_FILE, Commit.class);
         updateCWDFiles(cur, target);
-        File CURRENT_BRANCH = new File(Utils.readContentsAsString(Repository.HEAD).substring(5));
+        File CURRENT_BRANCH = new File(Utils.readContentsAsString(repo.HEAD).substring(5));
         Utils.writeContents(CURRENT_BRANCH, SHA1);
     }
 
     /** Get the commit file based on given SHA1, abbreviated or not. */
     private File getCommitFile(String SHA1) {
-        File COMMIT_FOLDER = Utils.join(Repository.OBJECT_FOLDER, SHA1.substring(0,2));
+        File COMMIT_FOLDER = Utils.join(repo.OBJECT_FOLDER, SHA1.substring(0,2));
         if (!COMMIT_FOLDER.exists()) {
             return null;
         }
@@ -402,13 +411,13 @@ public class Commit implements Serializable, Dumpable {
         Watcher w = new Watcher();
         isChangeCleared(w);
         // make sure the target branch exists
-        File BRANCH_FILE = Utils.join(Repository.LOCAL_BRANCH, branchName);
+        File BRANCH_FILE = Utils.join(repo.LOCAL_BRANCH_FOLDER, branchName);
         if (!BRANCH_FILE.exists()) {
             System.out.println("A branch with that name does not exist.");
             System.exit(0);
         }
         String COMMIT_ID = Utils.readContentsAsString(BRANCH_FILE);
-        Commit target = Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, COMMIT_ID.substring(0,2), COMMIT_ID.substring(2)), Commit.class);
+        Commit target = Utils.readObject(Utils.join(repo.OBJECT_FOLDER, COMMIT_ID.substring(0,2), COMMIT_ID.substring(2)), Commit.class);
         // make sure not to merge a branch with itself
         Commit cur = getHeadCommit();
         if (cur.hash().equals(target.hash())) {
@@ -491,7 +500,7 @@ public class Commit implements Serializable, Dumpable {
                 }
             }
         }
-        makeCommit("Merged " + branchName + " into " + Utils.readContentsAsString(Repository.HEAD).substring(5 + Repository.LOCAL_BRANCH.getAbsolutePath().length() + 1) + ".\n", target);
+        makeCommit("Merged " + branchName + " into " + Utils.readContentsAsString(repo.HEAD).substring(5 + repo.LOCAL_BRANCH_FOLDER.getAbsolutePath().length() + 1) + ".\n", target);
         if (!messageBox.isEmpty()) {
             System.out.println(messageBox.get(0));
         }
@@ -509,7 +518,7 @@ public class Commit implements Serializable, Dumpable {
             if(targetDistance.containsKey(SHA1)) {
                 int minDistanceNew = Math.min(currentDistance.get(SHA1), minDistance);
                 if (minDistanceNew != minDistance) {
-                    res = Utils.readObject(Utils.join(Repository.OBJECT_FOLDER, SHA1.substring(0,2), SHA1.substring(2)), Commit.class);
+                    res = Utils.readObject(Utils.join(repo.OBJECT_FOLDER, SHA1.substring(0,2), SHA1.substring(2)), Commit.class);
                     minDistance = minDistanceNew;
                 }
             }
@@ -524,7 +533,7 @@ public class Commit implements Serializable, Dumpable {
         if (CURRENT_COMMIT.Blobs.get(f) == null) {
             contentCurrent = new byte[]{};
         } else {
-            File BLOB_FILE = Utils.join(Repository.OBJECT_FOLDER,CURRENT_COMMIT.Blobs.get(f).substring(0,2), CURRENT_COMMIT.Blobs.get(f).substring(2));
+            File BLOB_FILE = Utils.join(repo.OBJECT_FOLDER,CURRENT_COMMIT.Blobs.get(f).substring(0,2), CURRENT_COMMIT.Blobs.get(f).substring(2));
             contentCurrent = Utils.readObject(BLOB_FILE, Blob.class).getContent();
         }
         // Get the specified file from the target commit
@@ -532,7 +541,7 @@ public class Commit implements Serializable, Dumpable {
         if (TARGET_COMMIT.Blobs.get(f) == null) {
             contentTarget = new byte[]{};
         } else {
-            File BLOB_FILE = Utils.join(Repository.OBJECT_FOLDER,TARGET_COMMIT.Blobs.get(f).substring(0,2), TARGET_COMMIT.Blobs.get(f).substring(2));
+            File BLOB_FILE = Utils.join(repo.OBJECT_FOLDER,TARGET_COMMIT.Blobs.get(f).substring(0,2), TARGET_COMMIT.Blobs.get(f).substring(2));
             contentTarget = Utils.readObject(BLOB_FILE, Blob.class).getContent();
         }
         // Generate the conflicted file
@@ -546,5 +555,68 @@ public class Commit implements Serializable, Dumpable {
             messageBox.add("Encountered a merge conflict.\n");
         }
     }
+
+    /** Going remote */
+
+    /** Add a remote repository with the given name and directory. */
+    public void addRemote(String name, String directory) {
+        // Prepare the local repo to be ready for going remote
+        Repository repoLocal = new Repository();
+        if (!repoLocal.REMOTE_REPO_FOLDER.exists()) {
+            repoLocal.REMOTE_REPO_FOLDER.mkdirs();
+        }
+        File REMOTE_FILE = Utils.join(repoLocal.REMOTE_REPO_FOLDER, name);
+        // Check whether the local repo already linked with the given remote repo
+        if (REMOTE_FILE.exists()) {
+            System.out.println("A remote with that name already exists.");
+            System.exit(0);
+        }
+        Utils.writeContents(REMOTE_FILE, directory);
+        // Set up the Gitlet system for the remote repository if it doesn't have one.
+        Repository repoRemote = new Repository(new File(directory));
+        if (!repoRemote.GITLET_SYSTEM.exists()) {
+            new Commit().setupPersistence(new File(directory));
+        }
+    }
+
+    /** Remove the remote repository with the given name. */
+    public void rmRemote(String name) {
+        Repository repoLocal = new Repository();
+        File REMOTE_FILE = Utils.join(repoLocal.REMOTE_REPO_FOLDER, name);
+        if (!REMOTE_FILE.exists()) {
+            System.out.println("A remote with that name does not exist.");
+            System.exit(0);
+        }
+        REMOTE_FILE.delete();
+    }
+
+    /** Append the current local branch's commits to the end of given branch of a specific remote repository.
+     * This only works when the current local branch is an update of the remote branch
+     *
+     * NOTE: In Git, so as Gitlet, the collection of all commits forms a directed acyclic graph (DAG), but any single branch is only a linked list.
+     *
+     * */
+//    public void pushRemote(String REMOTE_NAME, String REMOTE_BRANCH_NAME) {
+//        Repository repoLocal = new Repository();
+//        String REMOTE_PATH = Utils.readContentsAsString(Utils.join(repoLocal.REMOTE_REPO_FOLDER, REMOTE_NAME));
+//        File REMOTE_REPO = new File(REMOTE_PATH);
+//        String HEAD_PATH = Utils.readContentsAsString(repoLocal.HEAD).substring(5);
+//        String HEAD_SHA1 = Utils.readContentsAsString(new File(HEAD_PATH));
+//        if (!REMOTE_REPO.exists()) {
+//            System.out.println("Remote directory not found.");
+//            System.exit(0);
+//        }
+//        // Before push, check
+//        Repository repoRemote = new Repository(REMOTE_REPO);
+//        File REMOTE_BRANCH = Utils.join(repoRemote.LOCAL_BRANCH_FOLDER, REMOTE_BRANCH_NAME);
+//        if (!REMOTE_BRANCH.exists()) { // if the remote branch doesn't exist, create it
+//            Utils.writeContents(REMOTE_BRANCH, HEAD_SHA1);
+//        } else { // if the current local branch is not an update for the remote branch, abort.
+//            // That is, the head commit of the remote branch doesn't exist in the history of the current local branch.
+//            if ()
+//        }
+//        // Push
+//
+//    }
 }
 

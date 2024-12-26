@@ -26,7 +26,7 @@ public class Main {
         switch (firstArg) {
             case "init":
                 Commit c = new Commit();
-                c.setupPersistence();
+                c.setupPersistence(null);
                 break;
             case "add":
                 if (args.length != 2) {
@@ -178,10 +178,17 @@ public class Main {
                 }
                 break;
             case "tinytest": // For testing purposes. write a Blob object to a file named "tinytest", and see whether it can be read back correctly.
-                Utils.writeObject(Utils.join(Repository.PROJECT_FOLDER, "tinytest"),new Blob());
-                byte[] content = Utils.readContents(Utils.join(Repository.PROJECT_FOLDER, "tinytest"));
+                Utils.writeObject(Utils.join(new Repository().PROJECT_FOLDER, "tinytest"),new Blob());
+                byte[] content = Utils.readContents(Utils.join(new Repository().PROJECT_FOLDER, "tinytest"));
                 System.out.println(Utils.sha1((Object) content)); // the blob's sha1 hash once the "tinytest" is written to the file.
                 break;
+//            case "add_remote":
+//                if (args.length != 3) {
+//                    System.out.println("Wrong number of arguments.");
+//                    System.exit(0);
+//                }
+//
+//                break;
             default:
                 System.out.println("No command with that name exists.");
                 System.exit(0);
