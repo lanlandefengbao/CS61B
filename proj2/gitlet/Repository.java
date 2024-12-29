@@ -13,29 +13,29 @@ import static gitlet.Utils.*;
 public class Repository {
 
     /** The root folder of current project */
-    public File PROJECT_FOLDER = new File(System.getProperty("user.dir"));
+    File PROJECT_FOLDER = new File(System.getProperty("user.dir"));
 
     /** The .gitlet directory. */
-    public final File GITLET_SYSTEM = Utils.join(PROJECT_FOLDER, ".gitlet");
+    final File GITLET_SYSTEM = Utils.join(PROJECT_FOLDER, ".gitlet");
 
     /** Stores all commit objects AND Blob objects */
-    public final File OBJECT_FOLDER = Utils.join(GITLET_SYSTEM, "objects");
+    final File OBJECT_FOLDER = Utils.join(GITLET_SYSTEM, "objects");
 
     /** Stores the reference of the current HEAD commit.
      * If HEAD is pointing to a branch, the .git/HEAD file will contain a reference to that branch, like ".gitlet/refs/head/master"
      * If in detached Head state (not on any branch, but on a specific commit), the .git/HEAD file will contain the commit hash directly. */
-    public final File HEAD = Utils.join(GITLET_SYSTEM, "HEAD");
+    final File HEAD = Utils.join(GITLET_SYSTEM, "HEAD");
 
     /** Stores pointers of different branches */
-    public final File REF_FOLDER = Utils.join(GITLET_SYSTEM, "refs");
-    public final File LOCAL_BRANCH_FOLDER = Utils.join(REF_FOLDER, "heads");
-    public final File MASTER = Utils.join(LOCAL_BRANCH_FOLDER, "master");
+    final File REF_FOLDER = Utils.join(GITLET_SYSTEM, "refs");
+    final File LOCAL_BRANCH_FOLDER = Utils.join(REF_FOLDER, "heads");
+    final File MASTER = Utils.join(LOCAL_BRANCH_FOLDER, "master");
 
-    /** StagingArea */
-    public final File STAGING_FILE = Utils.join(GITLET_SYSTEM, "index");
+    /** StagingArea, stores the confirmed information of change from current version to next version */
+    final File STAGING_FILE = Utils.join(GITLET_SYSTEM, "index");
 
     /** Stores remote repositories */
-    public final File REMOTE_REPO_FOLDER = Utils.join(REF_FOLDER, "remotes");
+    final File REMOTE_REPO_FOLDER = Utils.join(REF_FOLDER, "remotes");
 
     /** Constructor */
     /** By default, that is, without naming a project folder, running Gitlet system on CWD */

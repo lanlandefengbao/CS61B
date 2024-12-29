@@ -556,7 +556,10 @@ public class Commit implements Serializable, Dumpable {
         }
     }
 
-    /** Going remote */
+    /** Going remote
+     *
+     * NOTE: The remote repository only contains .gitlet/ folder
+     * */
 
     /** Add a remote repository with the given name and directory. */
     public void addRemote(String name, String directory) {
@@ -590,33 +593,82 @@ public class Commit implements Serializable, Dumpable {
         REMOTE_FILE.delete();
     }
 
-    /** Append the current local branch's commits to the end of given branch of a specific remote repository.
+    /** Append the current local branch's commits to the end of given branch of a specific remote repository. And CHECKOUT the remote head to the head of current local branch.
      * This only works when the current local branch is an update of the remote branch
      *
      * NOTE: In Git, so as Gitlet, the collection of all commits forms a directed acyclic graph (DAG), but any single branch is only a linked list.
      *
      * */
-//    public void pushRemote(String REMOTE_NAME, String REMOTE_BRANCH_NAME) {
-//        Repository repoLocal = new Repository();
-//        String REMOTE_PATH = Utils.readContentsAsString(Utils.join(repoLocal.REMOTE_REPO_FOLDER, REMOTE_NAME));
-//        File REMOTE_REPO = new File(REMOTE_PATH);
-//        String HEAD_PATH = Utils.readContentsAsString(repoLocal.HEAD).substring(5);
-//        String HEAD_SHA1 = Utils.readContentsAsString(new File(HEAD_PATH));
-//        if (!REMOTE_REPO.exists()) {
-//            System.out.println("Remote directory not found.");
-//            System.exit(0);
-//        }
-//        // Before push, check
-//        Repository repoRemote = new Repository(REMOTE_REPO);
-//        File REMOTE_BRANCH = Utils.join(repoRemote.LOCAL_BRANCH_FOLDER, REMOTE_BRANCH_NAME);
-//        if (!REMOTE_BRANCH.exists()) { // if the remote branch doesn't exist, create it
-//            Utils.writeContents(REMOTE_BRANCH, HEAD_SHA1);
-//        } else { // if the current local branch is not an update for the remote branch, abort.
-//            // That is, the head commit of the remote branch doesn't exist in the history of the current local branch.
-//            if ()
-//        }
-//        // Push
-//
-//    }
+    public void pushRemote(String REMOTE_NAME, String REMOTE_BRANCH_NAME) {
+        Repository repoLocal = new Repository();
+        File REMOTE_FILE = Utils.join(repoLocal.REMOTE_REPO_FOLDER, REMOTE_NAME);
+        // if not linked with the specific remote repository, abort.
+        if (!REMOTE_FILE.exists()) {
+            System.out.println("Remote directory not found.");
+            System.exit(0);
+        }
+        String REMOTE_PATH = Utils.readContentsAsString(REMOTE_FILE);
+        File REMOTE_REPO = new File(REMOTE_PATH);
+        String HEAD_PATH = Utils.readContentsAsString(repoLocal.HEAD).substring(5);  // here we assume NO detached state exists.
+        String HEAD_SHA1 = Utils.readContentsAsString(new File(HEAD_PATH));
+        // if the remote repository doesn't exist, abort.
+        if (!REMOTE_REPO.exists()) {
+            System.out.println("Remote directory not found.");
+            System.exit(0);
+        }
+        // if the remote branch doesn't exist, create it
+        Repository repoRemote = new Repository(REMOTE_REPO);
+        File REMOTE_BRANCH = Utils.join(repoRemote.LOCAL_BRANCH_FOLDER, REMOTE_BRANCH_NAME);
+        if (!REMOTE_BRANCH.exists()) {
+            Utils.writeContents(REMOTE_BRANCH, HEAD_SHA1);
+        }
+        // iterate and check. Whether the head commit of the remote branch exists in the history of the current local branch.
+        String REMOTE_HEAD_PATH = Utils.readContentsAsString(repoRemote.HEAD).substring(5);  // here we assume NO detached state exists.
+        String REMOTE_HEAD_SHA1 = Utils.readContentsAsString(new File(REMOTE_HEAD_PATH));
+        HashMap<String, Serializable> APPEND = pushTemp(HEAD_SHA1, REMOTE_HEAD_SHA1);
+        // Push
+        for (String SHA1 : APPEND.keySet()) {
+            File COMMIT_FOLDER = Utils.join(repoRemote.OBJECT_FOLDER, SHA1.substring(0,2));
+            COMMIT_FOLDER.mkdirs();
+            Utils.writeObject(Utils.join(COMMIT_FOLDER, SHA1.substring(2)), APPEND.get(SHA1));
+        }
+        Utils.writeContents(REMOTE_BRANCH, HEAD_SHA1);
+        Utils.writeContents(repoRemote.HEAD, "ref: " + REMOTE_BRANCH.getAbsolutePath());
+    }
+
+    /** Collect all blob files(those represent commits and those represent single files) in a branch. */
+    private HashMap<String, Serializable> pushTemp(String headSHA1, String remoteHeadSHA1) {
+        HashMap<String, Serializable> res = new HashMap<>();
+        boolean found = false;
+        File commitFile = getCommitFile(headSHA1);
+        Commit cur = Utils.readObject(commitFile, Commit.class);
+        while (cur != null) {
+            // if reached the remote head, abort.
+            if (headSHA1.equals(remoteHeadSHA1)) {
+                found = true;
+                break;
+            }
+            // else, iterate and expand the append list
+            res.put(headSHA1, cur);
+            for (File f : cur.Blobs.keySet()) {
+                String BLOB_SHA1 = cur.Blobs.get(f);
+                File BLOB_FILE = Utils.join(repo.OBJECT_FOLDER, BLOB_SHA1.substring(0,2), BLOB_SHA1.substring(2));
+                Blob blob = Utils.readObject(BLOB_FILE, Blob.class);
+                res.put(BLOB_SHA1, blob);
+            }
+            headSHA1 = cur.Parent.get(0);
+            if (headSHA1 == null) {
+                cur = null;
+                continue;
+            }
+            commitFile = getCommitFile(headSHA1);
+            cur = Utils.readObject(commitFile, Commit.class);
+        }
+        if (!found) {
+            System.out.println("Please pull down remote changes before pushing.");
+            System.exit(0);
+        }
+        return res;
+    }
 }
 
