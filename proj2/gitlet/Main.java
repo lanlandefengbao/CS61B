@@ -182,13 +182,41 @@ public class Main {
                 byte[] content = Utils.readContents(Utils.join(new Repository().PROJECT_FOLDER, "tinytest"));
                 System.out.println(Utils.sha1((Object) content)); // the blob's sha1 hash once the "tinytest" is written to the file.
                 break;
-//            case "add_remote":
-//                if (args.length != 3) {
-//                    System.out.println("Wrong number of arguments.");
-//                    System.exit(0);
-//                }
-//
-//                break;
+            case "add-remote":
+                if (args.length != 3) {
+                    System.out.println("Wrong number of arguments.");
+                    System.exit(0);
+                }
+                new Commit().addRemote(args[1], args[2]);
+                break;
+            case "rm-remote":
+                if (args.length != 2) {
+                    System.out.println("Wrong number of arguments.");
+                    System.exit(0);
+                }
+                new Commit().rmRemote(args[1]);
+                break;
+            case "push":
+                if (args.length != 3) {
+                    System.out.println("Wrong number of arguments.");
+                    System.exit(0);
+                }
+                new Commit().pushRemote(args[1], args[2]);
+                break;
+            case "fetch":
+                if (args.length != 3) {
+                    System.out.println("Wrong number of arguments.");
+                    System.exit(0);
+                }
+                new Commit().fetchRemote(args[1], args[2]);
+                break;
+            case "pull":
+                if (args.length != 3) {
+                    System.out.println("Wrong number of arguments.");
+                    System.exit(0);
+                }
+                new Commit().pullRemote(args[1], args[2]);
+                break;
             default:
                 System.out.println("No command with that name exists.");
                 System.exit(0);
