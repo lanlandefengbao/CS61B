@@ -96,7 +96,7 @@ public class Commit implements Serializable, Dumpable {
         return res;
     }
 
-    /** Detect detached state (if HEAD is not pointing to a branch). */
+    /** Detect detached state (if HEAD is not pointing to branch head). */
     public static boolean isDetached() {
         return !Utils.readContentsAsString(repo.HEAD).startsWith("ref: ");
     }
@@ -527,7 +527,10 @@ public class Commit implements Serializable, Dumpable {
         }
     }
 
-    /** Find the split point of current branch and given branch. (Graph traverse) */
+    /** Find the split point of current branch and given branch. (Graph traverse)
+     * The major logic is that: select all commits that can be tracked from both branch heads,
+     * the one closet to the branch head(choose either the current or the given one) is the splitPoint.
+     * i.e. the LATEST COMMON ANCESTOR of the two branch head */
     private Commit splitPoint(Commit current, Commit target) {
         CommitTree currentTree = new CommitTree(current);
         CommitTree targetTree = new CommitTree(target);

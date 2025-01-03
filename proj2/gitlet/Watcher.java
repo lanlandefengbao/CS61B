@@ -4,7 +4,7 @@ import java.io.File;
 import java.util.*;
 
 
-/** The specific class of objects through which we can capture project files of different states in the current commit, including "staged for addition/removal", "untracked" and "changed but not staged", see DESIGN DOCUMENT for details.
+/** The specific class of objects through which we can capture project files of different states in the current commit, including "staged for addition/removal", "untracked" and "changed but not staged".
  * For each state, we collect its files of all cases into one instance variable */
 
 public class Watcher {

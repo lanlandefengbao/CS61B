@@ -7,11 +7,10 @@ import java.util.Queue;
 /** Represent the commitTree (a Directed-Acyclic-Graph) with HashMap<String, Commit[]> */
 public class CommitTree {
 
-    private HashMap<String, Commit[]> VerticesTable = new HashMap<>();
-    private HashMap<String, Integer> DistanceTable = new HashMap<>();
+    private HashMap<String, Commit[]> VerticesTable = new HashMap<>(); // Each key is a commit SHA1, and the value is its parents
+    private HashMap<String, Integer> DistanceTable = new HashMap<>(); // Each key is a commit SHA1, and the value is its distance from the starting point
 
-    /** Traverse the graph in the BFS manner to transfer it into a HashMap, starting from cur
-     * Meanwhile record each vertex's distance from starting point */
+    /** Traverse the graph in the BFS manner to represent it in the form of HashMap, starting from cur */
     public CommitTree(Commit cur) {
         Queue<Commit> fringe = new ArrayDeque<>() {};
         fringe.add(cur);

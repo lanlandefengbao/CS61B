@@ -18,5 +18,4 @@ public class StagedFile implements Serializable {
         Removal = new HashSet<>();
     }
 
-    
 }
